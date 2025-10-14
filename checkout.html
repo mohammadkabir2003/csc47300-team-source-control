@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Checkout — CCNY Exchange</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip-to-content" href="#main">Skip to content</a>
+    <header class="site-header"><div class="wrap"><a class="brand" href="index.html">CCNY Exchange</a><nav aria-label="Primary"><a class="nav-link" href="index.html">Home</a><a class="nav-link" href="market.html">Browse</a><a class="nav-link" href="cart.html">Cart</a><a class="nav-link" href="safety.html">Safety</a></nav></div></header>
+
+    <main id="main" class="container">
+      <header class="page-header"><h1>Checkout</h1><p class="muted">This is a front-end demo — no payment is processed.</p></header>
+
+      <section class="form">
+        <form id="checkout-form">
+          <div class="field">
+            <label>Full name <span class="req">*</span></label>
+            <input class="input" name="name" required />
+          </div>
+
+          <div class="field">
+            <label>Contact email <span class="req">*</span></label>
+            <input class="input" name="email" type="email" required />
+          </div>
+
+          <div class="field">
+            <label>Pickup location preference</label>
+            <input class="input" name="pickup" placeholder="E.g., NAC Library lobby" />
+          </div>
+
+          <h3>Order summary</h3>
+          <div id="order-summary" style="margin-bottom:1rem"></div>
+
+          <div style="display:flex;gap:.6rem"><button class="btn btn-primary" type="submit">Place order</button><a class="btn btn-ghost" href="cart.html">Back to cart</a></div>
+        </form>
+
+        <div id="order-result" style="display:none;margin-top:1rem" class="pill-card"></div>
+      </section>
+    </main>
+
+    <footer class="site-footer"><div class="wrap"><p>Prototype only. Meet in public for exchanges.</p></div></footer>
+
+    <script>
+      const CART_KEY='ccny_cart_v1';
+      function readCart(){ try { return JSON.parse(localStorage.getItem(CART_KEY)||'{}'); } catch(e){return{}} }
+      function writeCart(c){ localStorage.setItem(CART_KEY, JSON.stringify(c)); }
+
+      async function loadProducts(){ const res = await fetch('data/products.json').then(r=>r.json()).catch(()=>null); return res ? res.products : []; }
+
+      async function renderSummary(){
+        const products = await loadProducts();
+        const cart = readCart(); const summary=document.getElementById('order-summary'); summary.innerHTML=''; let total=0; const ids=Object.keys(cart); if(!ids.length){ summary.innerHTML='<p>Your cart is empty.</p>'; document.getElementById('order-total').textContent=''; return; }
+        ids.forEach(id=>{ const qty=cart[id]; const p=products.find(x=>x.id===id); if(!p) return; const line=document.createElement('div'); line.style.display='flex'; line.style.justifyContent='space-between'; line.style.marginBottom='.35rem'; line.innerHTML=`<div>${p.title} <span class="muted-small">x${qty}</span></div><div style="font-weight:800">${(p.price_cents*qty/100).toLocaleString(undefined,{style:'currency',currency:p.currency})}</div>`; summary.appendChild(line); total += p.price_cents*qty; });
+        const tot=document.createElement('div'); tot.style.marginTop='.6rem'; tot.style.fontWeight='800'; tot.textContent = 'Total: ' + new Intl.NumberFormat(undefined,{style:'currency',currency:'USD'}).format(total/100); summary.appendChild(tot);
+      }
+
+      document.getElementById('checkout-form').addEventListener('submit', async function(e){ e.preventDefault(); const cart=readCart(); const ids=Object.keys(cart); if(!ids.length){ alert('Your cart is empty'); return; } const form = new FormData(e.target); const name=form.get('name'); const email=form.get('email'); if(!name||!email){ alert('Please fill required fields'); return; } const result = document.getElementById('order-result'); result.style.display='block'; result.innerHTML = `<h3>Order placed</h3><p>Thanks, ${name}! We'll email a confirmation to ${email}. Meet in a public place to exchange items.</p><p><strong>Order ID:</strong> ${'ORD-' + Date.now()}</p>`; writeCart({}); await renderSummary(); });
+
+      renderSummary();
+    </script>
+  </body>
+</html>

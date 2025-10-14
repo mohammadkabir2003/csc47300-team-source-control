@@ -27,101 +27,113 @@
       <p class="muted">Sample data only. No backend — links are placeholders.</p>
     </header>
 
-    <form class="toolbar" role="search">
-      <input class="input" type="search" placeholder="Search textbooks, electronics, dorm items…" aria-label="Search" />
-      <select class="input" aria-label="Filter by category">
-        <option>All Categories</option>
-        <option>Textbooks</option>
-        <option>Electronics</option>
-        <option>Dorm Essentials</option>
-        <option>Clothing</option>
+    <form class="toolbar" role="search" id="filters">
+      <input id="q" class="input" type="search" placeholder="Search textbooks, electronics, dorm items…" aria-label="Search" />
+      <select id="category" class="input" aria-label="Filter by category">
+        <option value="">All Categories</option>
       </select>
-      <select class="input" aria-label="Sort by">
-        <option>Newest</option>
-        <option>Lowest Price</option>
-        <option>Highest Price</option>
+      <select id="sort" class="input" aria-label="Sort by">
+        <option value="newest">Newest</option>
+        <option value="price-asc">Lowest Price</option>
+        <option value="price-desc">Highest Price</option>
       </select>
     </form>
 
-    <section class="grid">
-      <!-- Card 1 -->
-      <article class="card">
-        <div class="thumb" aria-hidden="true"></div>
-        <div class="card-body">
-          <h3 class="card-title">Calculus I (Stewart) 8th Ed.</h3>
-          <p class="muted">Textbooks • NAC Library</p>
-          <div class="price-row">
-            <span class="price">$35</span>
-            <a class="btn btn-sm" href="#">Message Seller</a>
-          </div>
-        </div>
-      </article>
+    <section id="results" class="grid" aria-live="polite"></section>
+    <div id="no-results" style="display:none;text-align:center;margin-top:1rem" class="muted">No results — try a different search or reset filters.</div>
 
-      <!-- Card 2 -->
-      <article class="card">
-        <div class="thumb t2" aria-hidden="true"></div>
-        <div class="card-body">
-          <h3 class="card-title">TI-84 Plus CE</h3>
-          <p class="muted">Electronics • Marshak</p>
-          <div class="price-row">
-            <span class="price">$70</span>
-            <a class="btn btn-sm" href="#">Message Seller</a>
-          </div>
-        </div>
-      </article>
+    <script>
+      let DATA = [];
+      (async function(){ try{ const res = await fetch('data/products.json'); if(res.ok){ const j = await res.json(); DATA = j.products || []; initCategories(); readURLParams(); applyFilters(); } else { console.error('products.json load failed'); } }catch(e){ console.error(e); } })();
+      const qEl = document.getElementById('q');
+      const catEl = document.getElementById('category');
+      const sortEl = document.getElementById('sort');
+      const formEl = document.getElementById('filters');
+      const resultsEl = document.getElementById('results');
+      const noResultsEl = document.getElementById('no-results');
 
-      <!-- Card 3 -->
-      <article class="card">
-        <div class="thumb t3" aria-hidden="true"></div>
-        <div class="card-body">
-          <h3 class="card-title">Mini Fridge (3.2 cu ft)</h3>
-          <p class="muted">Dorm Essentials • Towers Lobby</p>
-          <div class="price-row">
-            <span class="price">$85</span>
-            <a class="btn btn-sm" href="#">Message Seller</a>
-          </div>
-        </div>
-      </article>
+      function initCategories(){
+        const cats = Array.from(new Set(DATA.map(p=>p.category).filter(Boolean)));
+        cats.forEach(c => { const opt = document.createElement('option'); opt.value = c; opt.textContent = c; catEl.appendChild(opt); });
+      }
 
-      <!-- Card 4 -->
-      <article class="card">
-        <div class="thumb t4" aria-hidden="true"></div>
-        <div class="card-body">
-          <h3 class="card-title">Noise-Cancelling Headphones</h3>
-          <p class="muted">Electronics • Student Center</p>
-          <div class="price-row">
-            <span class="price">$50</span>
-            <a class="btn btn-sm" href="#">Message Seller</a>
-          </div>
-        </div>
-      </article>
+      function readURLParams(){
+        const params = new URLSearchParams(location.search);
+        const q = params.get('q') || '';
+        const category = params.get('category') || '';
+        const sort = params.get('sort') || '';
+        if (q) qEl.value = q;
+        if (category) catEl.value = category;
+        if (sort) sortEl.value = sort;
+      }
 
-      <!-- Card 5 -->
-      <article class="card">
-        <div class="thumb t5" aria-hidden="true"></div>
-        <div class="card-body">
-          <h3 class="card-title">CS 111 Lecture Notes Bundle (PDF)</h3>
-          <p class="muted">Textbooks • Digital Delivery</p>
-          <div class="price-row">
-            <span class="price">$10</span>
-            <a class="btn btn-sm" href="#">Message Seller</a>
-          </div>
-        </div>
-      </article>
+      function normalizeText(s){ return (s||'').toString().toLowerCase(); }
 
-      <!-- Card 6 -->
-      <article class="card">
-        <div class="thumb t6" aria-hidden="true"></div>
-        <div class="card-body">
-          <h3 class="card-title">Desk Lamp + Bulb</h3>
-          <p class="muted">Dorm Essentials • Wille Admin</p>
-          <div class="price-row">
-            <span class="price">$12</span>
-            <a class="btn btn-sm" href="#">Message Seller</a>
-          </div>
-        </div>
-      </article>
-    </section>
+      function applyFilters(){
+        const q = normalizeText(qEl.value);
+        const category = catEl.value;
+        const sort = sortEl.value;
+
+        let out = DATA.filter(p => {
+          if (category && p.category !== category) return false;
+          if (!q) return true;
+          const hay = [p.title, p.description, (p.tags||[]).join(' '), p.location].map(normalizeText).join(' ');
+          return hay.indexOf(q) !== -1;
+        });
+
+        if (sort === 'newest') out.sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
+        else if (sort === 'price-asc') out.sort((a,b)=> a.price_cents - b.price_cents);
+        else if (sort === 'price-desc') out.sort((a,b)=> b.price_cents - a.price_cents);
+
+        renderResults(out);
+        try{
+          const params = new URLSearchParams();
+          if (q) params.set('q', qEl.value);
+          if (category) params.set('category', category);
+          if (sort) params.set('sort', sort);
+          const newUrl = params.toString() ? `${location.pathname}?${params.toString()}` : location.pathname;
+          history.replaceState(null, '', newUrl);
+        } catch(e){}
+      }
+
+      function createCard(p){
+        const a = document.createElement('article'); a.className = 'card';
+        const img = document.createElement('div'); img.className = 'thumb'; img.setAttribute('aria-hidden','true');
+        const initials = p.title.split(' ').slice(0,2).map(s=>s[0]).join('').toUpperCase();
+        const svg = `data:image/svg+xml;utf8,` + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300'><rect width='100%' height='100%' fill='%23eef2ff'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='40' fill='%23334155' font-family='Arial, Helvetica, sans-serif'>${initials}</text></svg>`);
+        img.style.backgroundImage = `url(${svg})`;
+        img.style.backgroundSize = 'cover';
+
+        const body = document.createElement('div'); body.className = 'card-body';
+        const h3 = document.createElement('h3'); h3.className = 'card-title'; h3.textContent = p.title;
+        const meta = document.createElement('p'); meta.className = 'muted'; meta.textContent = `${p.category} • ${p.location}`;
+        const priceRow = document.createElement('div'); priceRow.className = 'price-row';
+        const price = document.createElement('span'); price.className = 'price'; price.textContent = (p.price_cents/100).toLocaleString(undefined,{style:'currency',currency:p.currency||'USD'});
+        const btn = document.createElement('a'); btn.className = 'btn btn-sm'; btn.href = `product.html?id=${encodeURIComponent(p.id)}`; btn.textContent = 'View';
+        priceRow.appendChild(price); priceRow.appendChild(btn);
+
+        body.appendChild(h3); body.appendChild(meta); body.appendChild(priceRow);
+        a.appendChild(img); a.appendChild(body);
+        return a;
+      }
+
+      function renderResults(list){
+        resultsEl.innerHTML = '';
+        if (!list.length){ noResultsEl.style.display = 'block'; return; }
+        noResultsEl.style.display = 'none';
+        list.forEach(p => { resultsEl.appendChild(createCard(p)); });
+      }
+
+      function debounce(fn, wait=150){ let t; return (...args)=>{ clearTimeout(t); t = setTimeout(()=>fn(...args), wait); }; }
+
+      formEl.addEventListener('submit', (e) => { e.preventDefault(); applyFilters(); });
+
+      qEl.addEventListener('input', debounce(applyFilters, 200));
+      catEl.addEventListener('change', applyFilters);
+      sortEl.addEventListener('change', applyFilters);
+
+      
+    </script>
   </main>
 
   <footer class="site-footer">
