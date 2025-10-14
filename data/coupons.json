@@ -1,0 +1,17 @@
+{
+  "coupons": [
+    {
+      "code": "FROSH10",
+      "description": "10% off for first-years",
+      "percent_off": 10,
+      "valid_from": "2025-08-15T00:00:00Z",
+      "valid_to": "2025-10-01T00:00:00Z",
+      "restrictions": {
+        "min_subtotal_cents": 2000,
+        "eligible_category_ids": [
+          "cat-textbooks"
+        ]
+      }
+    }
+  ]
+}

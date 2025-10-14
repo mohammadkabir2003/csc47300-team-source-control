@@ -1,0 +1,64 @@
+{
+  "products": [
+    {
+      "id": "p-001",
+      "title": "Calculus: Early Transcendentals (9th Ed.)",
+      "category_id": "cat-textbooks",
+      "seller_id": "u-01",
+      "price_cents": 6500,
+      "currency": "USD",
+      "condition": "good",
+      "description": "Light highlighting in first 3 chapters. No access code.",
+      "images": [
+        "/img/p-001-1.jpg",
+        "/img/p-001-2.jpg"
+      ],
+      "tags": [
+        "MATH101",
+        "freshman"
+      ],
+      "inventory": {
+        "quantity": 1,
+        "status": "in_stock"
+      },
+      "delivery_options": {
+        "pickup_location_ids": [
+          "pk-ch-1",
+          "pk-lib-1"
+        ],
+        "meetup_ok": true,
+        "shipping": false
+      },
+      "created_at": "2025-09-05T12:00:00Z"
+    },
+    {
+      "id": "p-002",
+      "title": "Dell XPS 13 (2022) \u2022 16GB/512GB",
+      "category_id": "cat-laptops",
+      "seller_id": "u-01",
+      "price_cents": 65000,
+      "currency": "USD",
+      "condition": "very_good",
+      "description": "Battery 90% health. Includes charger.",
+      "images": [
+        "/img/p-002-1.jpg"
+      ],
+      "tags": [
+        "CS",
+        "laptop"
+      ],
+      "inventory": {
+        "quantity": 1,
+        "status": "in_stock"
+      },
+      "delivery_options": {
+        "pickup_location_ids": [
+          "pk-ch-1"
+        ],
+        "meetup_ok": true,
+        "shipping": false
+      },
+      "created_at": "2025-09-10T09:15:00Z"
+    }
+  ]
+}

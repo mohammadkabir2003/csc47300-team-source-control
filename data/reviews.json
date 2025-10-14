@@ -1,0 +1,22 @@
+{
+  "reviews": [
+    {
+      "id": "r-5001",
+      "author_id": "u-02",
+      "target_type": "product",
+      "target_id": "p-001",
+      "rating": 5,
+      "comment": "Book as described. Smooth pickup at the Hub.",
+      "created_at": "2025-09-14T11:00:00Z"
+    },
+    {
+      "id": "r-5002",
+      "author_id": "u-02",
+      "target_type": "seller",
+      "target_id": "u-01",
+      "rating": 5,
+      "comment": "Responsive and punctual!",
+      "created_at": "2025-09-14T11:05:00Z"
+    }
+  ]
+}
