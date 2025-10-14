@@ -1,0 +1,29 @@
+{
+  "categories": [
+    {
+      "id": "cat-textbooks",
+      "name": "Textbooks",
+      "parent_id": null
+    },
+    {
+      "id": "cat-electronics",
+      "name": "Electronics",
+      "parent_id": null
+    },
+    {
+      "id": "cat-dorm",
+      "name": "Dorm Essentials",
+      "parent_id": null
+    },
+    {
+      "id": "cat-tickets",
+      "name": "Event Tickets",
+      "parent_id": null
+    },
+    {
+      "id": "cat-laptops",
+      "name": "Laptops",
+      "parent_id": "cat-electronics"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "campus": {
+    "id": "campus-001",
+    "name": "Riverview College",
+    "domains": [
+      "riverview.edu"
+    ],
+    "pickup_locations": [
+      {
+        "id": "pk-ch-1",
+        "name": "Campus Hub Desk",
+        "building": "Student Center",
+        "hours": "9:00-18:00"
+      },
+      {
+        "id": "pk-lib-1",
+        "name": "Library Front Desk",
+        "building": "Main Library",
+        "hours": "10:00-20:00"
+      }
+    ]
+  }
+}

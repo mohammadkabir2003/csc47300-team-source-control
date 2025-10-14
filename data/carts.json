@@ -1,0 +1,17 @@
+{
+  "carts": [
+    {
+      "user_id": "u-02",
+      "items": [
+        {
+          "product_id": "p-001",
+          "qty": 1,
+          "price_cents": 6500,
+          "added_at": "2025-09-12T16:20:00Z"
+        }
+      ],
+      "coupon_code": null,
+      "updated_at": "2025-09-12T16:22:00Z"
+    }
+  ]
+}
