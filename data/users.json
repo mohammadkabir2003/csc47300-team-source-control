@@ -3,6 +3,7 @@
     {
       "id": "u-01",
       "email": "amaria@riverview.edu",
+      "password": "password",
       "role": "student",
       "student_profile": {
         "student_id": "RV2027-10452",
@@ -28,6 +29,7 @@
     {
       "id": "u-02",
       "email": "jchow@riverview.edu",
+      "password": "password",
       "role": "student",
       "student_profile": {
         "student_id": "RV2026-20931",
