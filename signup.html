@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sign Up — CCNY Exchange</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      .signup-section { max-width: 720px; margin: 3rem auto; padding: 1.25rem; }
+      .small-note { font-size: .95rem; color: var(--ink-2); margin-top: .35rem; }
+      .msg { text-align: center; margin-top: .75rem; font-weight: 600; }
+      .msg.success { color: #0f5132; background: rgba(16, 185, 129, 0.08); padding: .6rem; border-radius: 8px; }
+      .msg.error { color: #7f1d1d; background: rgba(239, 68, 68, 0.06); padding: .6rem; border-radius: 8px; }
+      .inline-helpers { display:flex; gap:.5rem; align-items:center; justify-content:center; margin-top:.6rem }
+    </style>
+  </head>
+  <body>
+    <a class="skip-to-content" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap">
+        <a class="brand" href="index.html">CCNY Exchange</a>
+        <nav aria-label="Primary">
+          <a class="nav-link" href="index.html">Home</a>
+          <a class="nav-link" href="market.html">Browse</a>
+          <a class="nav-link" href="sell.html">Sell an Item</a>
+          <a class="nav-link" href="safety.html">Safety</a>
+          <a class="nav-link" href="login.html">Log In</a>
+          <a class="nav-link" href="cart.html">Cart</a>
+          <a class="btn btn-primary btn-sm" href="signup.html">Sign Up</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main" class="container">
+      <section class="signup-section">
+        <header class="page-header">
+          <h1>Create your account</h1>
+          <p class="muted">Join CCNY Exchange to buy, sell and message other students.</p>
+        </header>
+
+        <form id="signupForm" class="form" novalidate>
+          <div class="field">
+            <label for="fullName">Full name <span class="req">*</span></label>
+            <input class="input" type="text" id="fullName" name="fullName" placeholder="Jane Student" required />
+          </div>
+
+          <div class="field">
+            <label for="email">Email <span class="req">*</span></label>
+            <input class="input" type="email" id="email" name="email" placeholder="you@ccny.cuny.edu" required />
+            <p class="help">Use your college email for easier verification (optional).</p>
+          </div>
+
+          <div class="field two-col">
+            <div>
+              <label for="password">Password <span class="req">*</span></label>
+              <input class="input" type="password" id="password" name="password" placeholder="Choose a strong password" required />
+              <p class="help">At least 6 characters.</p>
+            </div>
+            <div>
+              <label for="confirmPassword">Confirm password <span class="req">*</span></label>
+              <input class="input" type="password" id="confirmPassword" name="confirmPassword" placeholder="Repeat password" required />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="phone">Phone (optional)</label>
+            <input class="input" type="text" id="phone" name="phone" placeholder="(555) 123-4567" />
+          </div>
+
+          <div class="field">
+            <label>
+              <input type="checkbox" id="isSeller" name="isSeller" />
+              Register as a seller (you'll be able to list items)
+            </label>
+          </div>
+
+          <div class="actions">
+            <button type="submit" class="btn btn-primary">Create account</button>
+            <a class="btn btn-ghost" href="login.html">Already have an account?</a>
+          </div>
+
+          <p id="formMsg" class="msg" aria-live="polite"></p>
+        </form>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <p>Meet in public campus spaces. See <a href="safety.html">Safety & Policies</a>.</p>
+      </div>
+    </footer>
+
+    <script src="signup.js"></script>
+  </body>
+</html>

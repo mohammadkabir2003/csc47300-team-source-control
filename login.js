@@ -32,8 +32,8 @@ form.addEventListener("submit", async (e) => {
       return;
     }
 
-    // save user data to session local storage
-    localStorage.setItem("loggedInUser", JSON.stringify(user));
+    // save user data to session storage (do not persist across browser sessions)
+    sessionStorage.setItem("loggedInUser", JSON.stringify(user));
     window.location.href = "market.html";
     // /login.html -> /market.html
   } catch (error) {
