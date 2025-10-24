@@ -1,8 +1,9 @@
 // profile div
-const profileDiv = document.getElementById("profileDiv")
+const profileDiv = document.getElementById("profileDiv");
 // logout button
 
-const user = JSON.parse(localStorage.getItem("loggedInUser"));
+// read loggedInUser only from sessionStorage so the profile is not auto-shown
+const user = JSON.parse(sessionStorage.getItem("loggedInUser"));
 
 if (!user) {
   // profile div not be displayed
@@ -13,13 +14,13 @@ if (!user) {
   const email = user.email;
   const s = user.student_profile;
   const p = user.seller_profile;
-console.log(email, s, p)
+  console.log(email, s, p);
   // edit profile div here
- profileDiv.innerHTML = `
+  profileDiv.innerHTML = `
    <h2> Email: ${email} </h2>
    <h2> Name: ${s.first_name} ${s.last_name} </h2>
    <h2> Major: ${s.major} </h2>
-  `
+  `;
 }
 
 // logoutBtn
