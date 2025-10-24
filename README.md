@@ -29,7 +29,7 @@
 
 - Validates form inputs
 - Stores newly created users locally.
-- Redirects to login page after success.
+- Redirects to profile age (logged in state) after success
 
 ---
-***All commits starting from "Implemented login feature" to "Signup page added" are part of HW #4*** 
+***All commits starting from "Implemented login feature" to "HW4 Final Submission" are part of HW #4*** 
