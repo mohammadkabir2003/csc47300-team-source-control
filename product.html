@@ -19,6 +19,7 @@
           <a class="nav-link" href="sell.html">Sell an Item</a>
           <a class="nav-link" href="safety.html">Safety</a>
           <a class="nav-link" href="cart.html">Cart <span id="nav-cart-count" class="cart-badge" style="display:none">0</span></a>
+          <a class="nav-link" href="orders.html">Orders</a>
           <a class="nav-link" href="login.html">Log In</a>
           <a class="btn btn-primary btn-sm" href="signup.html">Sign Up</a>
         </nav>
@@ -56,7 +57,6 @@
                 </label>
 
                 <button id="add-cart" class="btn btn-primary">Add to Cart</button>
-                <a id="msg-seller" class="btn btn-ghost" href="#">Message Seller</a>
               </div>
 
               <dl style="margin-top:1rem">
@@ -70,6 +70,43 @@
           <section id="meta" class="muted">
             <h3>Details</h3>
             <p id="meta-details">&nbsp;</p>
+          </section>
+
+          <hr style="margin:2rem 0" />
+          
+          <!-- Reviews/Comments Section -->
+          <section id="reviews-section" style="margin-top:2rem">
+            <h3 style="margin-bottom:1rem">Reviews & Comments</h3>
+            
+            <!-- Add Review Form -->
+            <div id="review-form-container" class="form" style="margin-bottom:2rem;padding:1.5rem;background:#f8fafc;border-radius:8px">
+              <h4 style="margin-top:0">Leave a Review</h4>
+              <form id="review-form">
+                <div class="field">
+                  <label for="review-rating">Rating<span class="req">*</span></label>
+                  <select class="input" id="review-rating" name="rating" required>
+                    <option value="">Select rating...</option>
+                    <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
+                    <option value="4">⭐⭐⭐⭐ Good</option>
+                    <option value="3">⭐⭐⭐ Average</option>
+                    <option value="2">⭐⭐ Poor</option>
+                    <option value="1">⭐ Very Poor</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="review-comment">Comment<span class="req">*</span></label>
+                  <textarea class="input" id="review-comment" name="comment" rows="4" required placeholder="Share your experience with this product..."></textarea>
+                </div>
+                <p id="review-error" class="error-msg" role="alert" style="display:none"></p>
+                <p id="review-success" class="success-msg" role="alert" style="display:none"></p>
+                <button type="submit" class="btn btn-primary">Submit Review</button>
+              </form>
+            </div>
+
+            <!-- Reviews List -->
+            <div id="reviews-list">
+              <p class="muted">Loading reviews...</p>
+            </div>
           </section>
         </section>
 
@@ -86,8 +123,18 @@
       </div>
     </footer>
 
+    <script type="importmap">
+    {
+      "imports": {
+        "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.45.0"
+      }
+    }
+    </script>
+    <script src="env.js"></script>
     <script type="module" src="dist/dark-mode.js"></script>
     <script type="module" src="dist/product.js"></script>
     <script type="module" src="dist/auth-ui.js"></script>
+    <script type="module" src="dist/cart-utils.js"></script>
   </body>
 </html>
+

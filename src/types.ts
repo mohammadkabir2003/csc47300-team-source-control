@@ -1,3 +1,8 @@
+// This file holds all the core data structures we use throughout the marketplace.
+// Think of these as the "blueprints" for what a user, product, or cart looks like.
+// We define them once here so every part of the app speaks the same language.
+
+// Everything we know about a CCNY student - their major, where they live, when they graduate
 export interface StudentProfile {
   student_id?: string;
   first_name?: string;
@@ -13,12 +18,14 @@ export interface StudentProfile {
   };
 }
 
+// When someone starts selling, we track their reputation here - ratings and review counts
 export interface SellerProfile {
   display_name: string;
   rating: number;
   reviews_count: number;
 }
 
+// The full user object with everything - email, profile info, seller status, all of it
 export interface User {
   id: string | number;
   email: string;
@@ -37,6 +44,7 @@ export interface User {
   _lcEmail?: string;
 }
 
+// A slimmed-down version of User for when someone's logged in - just what we need to show their session
 export interface UserSession {
   id: string | number;
   email: string;
@@ -49,6 +57,7 @@ export interface UserSession {
   last_name?: string;
 }
 
+// Info about someone selling stuff - their name, verified badge status, how to reach them
 export interface Seller {
   id: string;
   name: string;
@@ -61,6 +70,7 @@ export interface Seller {
   };
 }
 
+// A product listing with all the details - what it is, how much, where to get it, photos, everything
 export interface Product {
   id: string;
   title: string;
@@ -88,6 +98,7 @@ export interface Product {
   };
 }
 
+// When we load a bunch of products at once, this wraps them up with some metadata
 export interface ProductData {
   meta?: {
     version: string;
@@ -97,10 +108,12 @@ export interface ProductData {
   products: Product[];
 }
 
+// Simple shopping cart - just product IDs mapped to how many you want
 export interface Cart {
   [productId: string]: number;
 }
 
+// Collection of all users when we need to work with multiple at once
 export interface UsersData {
   users: User[];
 }
