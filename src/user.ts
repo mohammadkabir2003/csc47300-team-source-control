@@ -1,7 +1,9 @@
 import { UserSession, StudentProfile } from './types.js';
 
+// grab the div where we'll display the profile info
 const profileDiv = document.getElementById("profileDiv") as HTMLDivElement | null;
 
+// try to load the logged-in user from sessionStorage
 let user: UserSession | null = null;
 try {
   const raw = sessionStorage.getItem("loggedInUser");
@@ -12,11 +14,14 @@ try {
   console.warn("Failed to parse loggedInUser from sessionStorage:", err);
 }
 
+// if the profileDiv doesn't exist, bail out (shouldn't happen)
 if (!profileDiv) {
   console.warn("No #profileDiv on this page");
 } else if (!user) {
+  // nobody's logged in, show a message
   profileDiv.innerHTML = "<p>No user logged in.</p>";
 } else {
+  // got a user! display their profile
   const email: string = user.email || "";
 
   if (user.student_profile) {
