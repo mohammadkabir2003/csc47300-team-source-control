@@ -19,13 +19,20 @@ const SUPABASE_URL = (typeof window !== 'undefined' && window.__ENV__?.SUPABASE_
 const SUPABASE_ANON_KEY = (typeof window !== 'undefined' && window.__ENV__?.SUPABASE_ANON_KEY) || 'YOUR_PUBLIC_ANON_KEY';
 const SUPABASE_SERVICE_ROLE_KEY = (typeof window !== 'undefined' && window.__ENV__?.SUPABASE_SERVICE_ROLE_KEY) || '';
 
-if (
-  !SUPABASE_URL.startsWith('https://') ||
-  SUPABASE_URL.includes('YOUR-PROJECT-REF') ||
-  SUPABASE_ANON_KEY.includes('YOUR_PUBLIC_ANON_KEY')
-) {
-  // gentle reminder for local dev so it's obvious what to do
-  console.warn('[supabase] Please set SUPABASE_URL and SUPABASE_ANON_KEY in .env');
+// Check if Supabase credentials are properly configured
+// This flag tells us if the app can actually talk to the database
+export const isSupabaseConfigured = 
+  SUPABASE_URL.startsWith('https://') &&
+  !SUPABASE_URL.includes('YOUR-PROJECT-REF') &&
+  !SUPABASE_ANON_KEY.includes('YOUR_PUBLIC_ANON_KEY') &&
+  SUPABASE_ANON_KEY.length > 20;
+
+if (!isSupabaseConfigured) {
+  // Loud warning so developers know something's wrong with their setup
+  console.error('[supabase] ❌ CONFIGURATION ERROR: Missing or invalid Supabase credentials!');
+  console.error('[supabase] Please check your .env file and make sure SUPABASE_URL and SUPABASE_ANON_KEY are set correctly.');
+  console.error('[supabase] Current URL:', SUPABASE_URL);
+  console.error('[supabase] Key status:', SUPABASE_ANON_KEY.includes('YOUR_PUBLIC') ? 'PLACEHOLDER' : 'SET');
 }
 
 // Regular client for public operations
@@ -43,12 +50,23 @@ export const supabaseAdmin = SUPABASE_SERVICE_ROLE_KEY
 
 // get the current auth session
 export async function getSession(): Promise<Session | null> {
-  const { data, error } = await supabase.auth.getSession();
-  if (error) {
-    console.warn('[supabase] getSession error:', error.message);
+  // If Supabase isn't configured, we can't get a session
+  if (!isSupabaseConfigured) {
+    console.error('[supabase] Cannot get session - Supabase is not configured');
     return null;
   }
-  return data.session ?? null;
+  
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.warn('[supabase] getSession error:', error.message);
+      return null;
+    }
+    return data.session ?? null;
+  } catch (err) {
+    console.error('[supabase] Network error getting session:', err);
+    return null;
+  }
 }
 
 // subscribe to auth state changes; returns an unsubscribe function

@@ -1,6 +1,6 @@
 // The orders page where you can see everything you've bought through the marketplace.
 // Shows each order with all the items, when you bought them, and the mock payment status.
-import { supabase } from './supabase-client.js';
+import { supabase, isSupabaseConfigured } from './supabase-client.js';
 
 // interface OrderItem {
 //   id: string;
@@ -25,13 +25,24 @@ import { supabase } from './supabase-client.js';
 async function loadOrders(): Promise<void> {
   const container = document.getElementById('orders-container') as HTMLElement;
   
-  const session = await supabase.auth.getSession();
-  if (!session.data.session) {
-    container.innerHTML = '<p>Please <a href="login.html">log in</a> to view your orders.</p>';
+  // Check if database is available before trying to load orders
+  if (!isSupabaseConfigured) {
+    container.innerHTML = `
+      <div style="padding: 20px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 5px;">
+        <strong>⚠️ Database connection unavailable</strong>
+        <p>Unable to load your orders. Please check your configuration or try again later.</p>
+      </div>
+    `;
     return;
   }
 
   try {
+    const session = await supabase.auth.getSession();
+    if (!session.data.session) {
+      container.innerHTML = '<p>Please <a href="login.html">log in</a> to view your orders.</p>';
+      return;
+    }
+
     // Pull all their orders from the database with all the details about each item
     const { data: orders, error } = await supabase
       .from('orders')
@@ -54,7 +65,10 @@ async function loadOrders(): Promise<void> {
       .eq('user_id', session.data.session.user.id)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('[orders] Error fetching orders:', error);
+      throw new Error('Failed to load orders: ' + error.message);
+    }
 
     if (!orders || orders.length === 0) {
       container.innerHTML = '<p>No orders yet. <a href="market.html">Start shopping!</a></p>';
@@ -129,9 +143,25 @@ async function loadOrders(): Promise<void> {
     });
 
   } catch (err: any) {
-    console.error('Error loading orders:', err);
-    container.innerHTML = '<p class="error-msg">Failed to load orders. Please try again.</p>';
+    console.error('[orders] Error loading orders:', err);
+    // Show a helpful error message depending on what went wrong
+    if (err.message?.includes('fetch') || err.message?.includes('Network')) {
+      container.innerHTML = `
+        <div style="padding: 20px; background-color: #fee; border: 1px solid #f00; border-radius: 5px;">
+          <strong>⚠️ Network error</strong>
+          <p>Unable to load your orders. Please check your internet connection and try again.</p>
+        </div>
+      `;
+    } else {
+      container.innerHTML = `
+        <div style="padding: 20px; background-color: #fee; border: 1px solid #f00; border-radius: 5px;">
+          <strong>⚠️ Error loading orders</strong>
+          <p>Failed to load orders. Please try again later.</p>
+        </div>
+      `;
+    }
   }
 }
 
+// Kick things off when the page loads
 loadOrders();

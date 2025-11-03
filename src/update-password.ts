@@ -1,10 +1,18 @@
 // The page you land on after clicking the reset link in your email.
 // Here you can choose a new password and get back into your account.
-import { supabase } from './supabase-client.js';
+import { supabase, isSupabaseConfigured } from './supabase-client.js';
 
 const form = document.getElementById('updateForm') as HTMLFormElement;
 const errorMsg = document.getElementById('errorMsg') as HTMLParagraphElement;
 const successMsg = document.getElementById('successMsg') as HTMLParagraphElement;
+
+// If database isn't available, disable the form and show a warning
+if (!isSupabaseConfigured) {
+  errorMsg.textContent = '⚠️ Database connection error. Password update is currently unavailable.';
+  errorMsg.style.color = '#dc3545';
+  form.style.opacity = '0.5';
+  form.style.pointerEvents = 'none';
+}
 
 form.addEventListener('submit', async (e: Event): Promise<void> => {
   e.preventDefault();
@@ -12,6 +20,12 @@ form.addEventListener('submit', async (e: Event): Promise<void> => {
   // Clear out old error/success messages
   errorMsg.textContent = '';
   successMsg.textContent = '';
+
+  // Double-check that database is available
+  if (!isSupabaseConfigured) {
+    errorMsg.textContent = '⚠️ Database connection error. Password update is currently unavailable.';
+    return;
+  }
 
   const passwordInput = document.getElementById('password') as HTMLInputElement;
   const confirmInput = document.getElementById('confirmPassword') as HTMLInputElement;
@@ -37,7 +51,15 @@ form.addEventListener('submit', async (e: Event): Promise<void> => {
     });
 
     if (error) {
-      errorMsg.textContent = error.message || 'Failed to update password.';
+      console.error('[update-password] Supabase error:', error);
+      // Provide helpful error messages based on what went wrong
+      if (error.message?.includes('fetch') || error.message?.includes('Network')) {
+        errorMsg.textContent = '⚠️ Network error. Unable to update password. Please check your connection.';
+      } else if (error.message?.includes('session')) {
+        errorMsg.textContent = '⚠️ Your reset link may have expired. Please request a new one.';
+      } else {
+        errorMsg.textContent = error.message || 'Failed to update password.';
+      }
       return;
     }
 
@@ -47,8 +69,13 @@ form.addEventListener('submit', async (e: Event): Promise<void> => {
     setTimeout(() => {
       window.location.href = 'login.html';
     }, 2000);
-  } catch (err) {
-    console.error('Password update error:', err);
-    errorMsg.textContent = 'An unexpected error occurred. Please try again.';
+  } catch (err: any) {
+    console.error('[update-password] Password update error:', err);
+    // Handle network errors specifically
+    if (err instanceof TypeError && err.message.includes('fetch')) {
+      errorMsg.textContent = '⚠️ Network error. Unable to reach authentication service.';
+    } else {
+      errorMsg.textContent = 'An unexpected error occurred. Please try again later.';
+    }
   }
 });

@@ -1,11 +1,19 @@
 // The signup page where new students create their accounts.
 // We require a CCNY email address and store their info in Supabase.
-import { supabase } from './supabase-client.js';
+import { supabase, isSupabaseConfigured } from './supabase-client.js';
 
 // Make sure the page is fully loaded before we start grabbing form elements
 document.addEventListener("DOMContentLoaded", (): void => {
   const form = document.getElementById("signupForm") as HTMLFormElement;
   const msgEl = document.getElementById("formMsg") as HTMLParagraphElement;
+
+  // Check if Supabase is available - if not, disable the form and show an error
+  if (!isSupabaseConfigured) {
+    showMessage('⚠️ Database connection error. Sign up is currently unavailable. Please contact support.', 'error');
+    form.style.opacity = '0.5';
+    form.style.pointerEvents = 'none';
+    return; // Stop here so we don't set up the form listener
+  }
 
   // Show a message under the form - red for errors, green for success
   // Makes it obvious to the user what went wrong or that everything worked
@@ -70,7 +78,16 @@ document.addEventListener("DOMContentLoaded", (): void => {
       });
 
       if (error) {
-        const msg = error.message || 'Sign up failed.';
+        // Handle different types of errors with friendly messages
+        let msg = error.message || 'Sign up failed.';
+        if (error.message.toLowerCase().includes('fetch') || error.message.toLowerCase().includes('network')) {
+          msg = '⚠️ Network error. Unable to create account. Please check your connection.';
+        } else if (error.message.toLowerCase().includes('api key')) {
+          msg = '⚠️ Configuration error. Please contact support.';
+        } else if (error.message.toLowerCase().includes('already registered')) {
+          msg = 'This email is already registered. Try logging in instead.';
+        }
+        console.error('[signup] Supabase error:', error);
         showMessage(msg);
         return;
       }
@@ -82,7 +99,12 @@ document.addEventListener("DOMContentLoaded", (): void => {
       form.reset();
     } catch (err) {
       console.error('Sign up error:', err);
-      showMessage('An unexpected error occurred. Please try again.');
+      // More specific error handling for network failures
+      if (err instanceof TypeError && (err as Error).message.includes('fetch')) {
+        showMessage('⚠️ Network error. Unable to reach authentication service.');
+      } else {
+        showMessage('An unexpected error occurred. Please try again later.');
+      }
     }
   });
 });

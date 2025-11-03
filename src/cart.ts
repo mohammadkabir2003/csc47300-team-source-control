@@ -1,59 +1,80 @@
 // The shopping cart page where you see all the stuff you're about to buy.
 // Shows each item with quantity controls and calculates your total.
 import { Product } from './types.js';
-import { supabase, getSession } from './supabase-client.js';
+import { supabase, getSession, isSupabaseConfigured } from './supabase-client.js';
 import { updateNavCart } from './cart-utils.js';
 
 // Find the user's cart in the database, or make a new one if they don't have one yet
 async function getOrCreateCart(): Promise<string | null> {
+  // Can't get a cart if database isn't available
+  if (!isSupabaseConfigured) {
+    console.error('[cart] Supabase not configured');
+    return null;
+  }
+
   const session = await getSession();
   if (!session) return null;
   
-  // See if this user already has a cart sitting in the database
-  const { data: existingCart, error: fetchError } = await supabase
-    .from('carts')
-    .select('id')
-    .eq('user_id', session.user.id)
-    .maybeSingle();
-  
-  if (fetchError) {
-    console.error('Error fetching cart:', fetchError);
+  try {
+    // See if this user already has a cart sitting in the database
+    const { data: existingCart, error: fetchError } = await supabase
+      .from('carts')
+      .select('id')
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+    
+    if (fetchError) {
+      console.error('[cart] Error fetching cart:', fetchError);
+      return null;
+    }
+    
+    if (existingCart) return existingCart.id;
+    
+    // No cart yet? Make them a fresh one
+    const { data: newCart, error: createError } = await supabase
+      .from('carts')
+      .insert([{ user_id: session.user.id }])
+      .select('id')
+      .single();
+    
+    if (createError) {
+      console.error('[cart] Error creating cart:', createError);
+      return null;
+    }
+    
+    return newCart?.id || null;
+  } catch (err) {
+    console.error('[cart] Network error accessing cart:', err);
     return null;
   }
-  
-  if (existingCart) return existingCart.id;
-  
-  // No cart yet? Make them a fresh one
-  const { data: newCart, error: createError } = await supabase
-    .from('carts')
-    .insert([{ user_id: session.user.id }])
-    .select('id')
-    .single();
-  
-  if (createError) {
-    console.error('Error creating cart:', createError);
-    return null;
-  }
-  
-  return newCart?.id || null;
 }
 
 // Pull all the items from the user's cart so we can show them on the page
 async function getCartItems(): Promise<any[]> {
+  if (!isSupabaseConfigured) {
+    console.error('[cart] Cannot get cart items - Supabase not configured');
+    return [];
+  }
+
   const cartId = await getOrCreateCart();
   if (!cartId) return [];
   
-  const { data, error } = await supabase
-    .from('cart_items')
-    .select('id, product_id, quantity')
-    .eq('cart_id', cartId);
-  
-  if (error) {
-    console.error('Error fetching cart items:', error);
+  try {
+    const { data, error } = await supabase
+      .from('cart_items')
+      .select('id, product_id, quantity')
+      .eq('cart_id', cartId);
+    
+    if (error) {
+      console.error('[cart] Error fetching cart items:', error);
+      return [];
+    }
+    
+    return data || [];
+  } catch (err) {
+    console.error('[cart] Network error fetching cart items:', err);
     return [];
   }
-  
-  return data || [];
 }
 
 // Change how many of something they want, or remove it entirely if they set it to zero
@@ -96,6 +117,19 @@ async function updateCartItemQuantity(productId: string, quantity: number): Prom
 async function render(): Promise<void> {
   const list = document.getElementById('cart-list') as HTMLElement;
   list.innerHTML = '<p>Loading cart...</p>';
+  
+  // Check if Supabase is configured before trying to access the database
+  if (!isSupabaseConfigured) {
+    list.innerHTML = `
+      <div style="padding: 20px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 5px;">
+        <strong>⚠️ Database connection unavailable</strong>
+        <p>Unable to load your cart. Please check your configuration or try again later.</p>
+      </div>
+    `;
+    const subtotalEl = document.getElementById('subtotal');
+    if (subtotalEl) subtotalEl.textContent = '$0.00';
+    return;
+  }
   
   const session = await getSession();
   if (!session) {

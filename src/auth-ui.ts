@@ -1,3 +1,5 @@
+// The navbar authentication UI that shows login/signup links or profile/logout based on login state.
+// Listens for auth changes and updates the navbar automatically when someone logs in or out.
 import { supabase, getSession, onAuthStateChange } from './supabase-client.js';
 
 // ID for the navbar element that shows logout button
@@ -7,7 +9,10 @@ const STATUS_ELEMENT_ID = 'headerUserStatus';
 document.addEventListener('DOMContentLoaded', (): void => {
   // grab the main navigation element
   const nav = document.querySelector('header .wrap nav');
-  if (!nav) return; // bail out if there's no nav (shouldn't happen, but just in case)
+  if (!nav) {
+    console.warn('[auth-ui] No navigation element found');
+    return; // bail out if there's no nav (shouldn't happen, but just in case)
+  }
 
   // find the important navbar links we need to show/hide based on login state
   const links = {
@@ -98,18 +103,34 @@ document.addEventListener('DOMContentLoaded', (): void => {
 
   // When they hit logout, end their session and take them back to the homepage
   async function handleLogout(): Promise<void> {
-    await supabase.auth.signOut();
-    location.href = 'index.html';
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('[auth-ui] Logout error:', error);
+        alert('Failed to log out. Please try again.');
+        return;
+      }
+      location.href = 'index.html';
+    } catch (err) {
+      console.error('[auth-ui] Logout error:', err);
+      alert('An error occurred while logging out.');
+    }
   }
 
   // Check if someone's logged in and update the navbar to match their status
   async function render(): Promise<void> {
-    const session = await getSession();
-    if (session && session.user) {
-      const email = session.user.email || '';
-      const meta = session.user.user_metadata || {};
-      showLoggedInState(email, meta);
-    } else {
+    try {
+      const session = await getSession();
+      if (session && session.user) {
+        const email = session.user.email || '';
+        const meta = session.user.user_metadata || {};
+        showLoggedInState(email, meta);
+      } else {
+        showLoggedOutState();
+      }
+    } catch (err) {
+      console.error('[auth-ui] Error rendering auth state:', err);
+      // If we can't determine auth state, default to logged out view
       showLoggedOutState();
     }
   }
