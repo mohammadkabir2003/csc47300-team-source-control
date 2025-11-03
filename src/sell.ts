@@ -166,7 +166,7 @@ if (sellForm) {
     }
     
     // Error 4: Price is missing or invalid
-    if (!priceStr || isNaN(price)) {
+    if (isNaN(price) || priceStr === '') {
       if (errorMsg) errorMsg.textContent = '❌ Please enter a valid price.';
       return;
     }
