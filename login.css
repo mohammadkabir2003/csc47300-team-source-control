@@ -1,10 +1,44 @@
-.login-section {
-  max-width: 400px;
-  margin: 3rem auto;
-  padding: 2rem;
-  background: #ffffff;
+.btn {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
   border-radius: 8px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--accent-1);
+  border: 1.5px solid var(--accent-1);
+}
+.btn-ghost:hover, .btn-ghost:focus {
+  background: var(--bg-1);
+  color: var(--accent-2);
+  border-color: var(--accent-2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+
+.inline-helpers {
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+  justify-content: center;
+  margin-top: .6rem;
+}
+.login-section {
+  max-width: 480px;
+  margin: 3rem auto;
+  padding: 3rem 2.5rem;
+  background: var(--card);
+  border-radius: 16px;
+  box-shadow: var(--shadow-1);
+  border: 1px solid var(--border);
 }
 
 .login-section h1 {
@@ -29,37 +63,74 @@ input[type="text"],
 input[type="password"],
 input[type="email"] {
   width: 100%;
-  padding: 0.8rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: 0.85rem 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
   font-size: 1rem;
-  transition: border-color 0.2s;
+  transition: all 0.2s ease;
+  background: var(--card);
 }
 
 input:focus {
-  border-color: #0057b7;
+  border-color: var(--accent-1);
   outline: none;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .login-button {
   width: 100%;
   padding: 0.9rem;
-  background-color: #0057b7;
+  background-color: var(--accent-1);
   color: #fff;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: all 0.3s ease;
 }
 
 .login-button:hover {
-  background-color: #004094;
+  background-color: var(--accent-2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
-.error-message {
+.error-message, .error-msg {
   margin-top: 1rem;
   color: #c0392b;
   text-align: center;
   font-weight: 500;
+}
+
+.success-msg {
+  margin-top: 1rem;
+  color: #27ae60;
+  text-align: center;
+  font-weight: 500;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  align-items: stretch;
+}
+
+.actions .btn {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (min-width: 500px) {
+  .actions {
+    flex-direction: row;
+    justify-content: center;
+    gap: 1rem;
+  }
+  .actions .btn {
+    width: auto;
+    min-width: 140px;
+  }
 }

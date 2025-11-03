@@ -1,10 +1,15 @@
 {
   "scripts": {
-    "build": "tsc",
+    "build": "node generate-env.js && tsc",
     "watch": "tsc --watch",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "dev": "node generate-env.js && http-server -p 8080 -c-1"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
   },
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "typescript": "^5.3.0",
+    "http-server": "^14.1.1"
   }
 }
