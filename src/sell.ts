@@ -130,8 +130,12 @@ if (sellForm) {
     
     // Check if user is logged in
     const session = await getSession();
+    console.log('[sell] Session check:', session ? 'Logged in' : 'Not logged in', session?.user?.email);
     if (!session) {
-      if (errorMsg) errorMsg.textContent = 'You must be logged in to sell items.';
+      if (errorMsg) {
+        errorMsg.textContent = '⚠️ You must be logged in to sell items. Please log in first.';
+        errorMsg.style.display = 'block';
+      }
       return;
     }
     
@@ -256,14 +260,18 @@ if (sellForm) {
       }
     } catch (err: any) {
       console.error('[sell] Error creating product:', err);
+      console.error('[sell] Full error details:', JSON.stringify(err, null, 2));
       if (errorMsg) {
+        errorMsg.style.display = 'block';
         // Provide more helpful error messages based on what went wrong
         if (err.message?.includes('fetch') || err.message?.includes('Network')) {
           errorMsg.textContent = '⚠️ Network error. Unable to create listing. Please check your connection.';
-        } else if (err.message?.includes('permission') || err.message?.includes('policy')) {
-          errorMsg.textContent = '⚠️ Permission denied. Please make sure you are logged in.';
+        } else if (err.message?.includes('permission') || err.message?.includes('policy') || err.message?.includes('RLS')) {
+          errorMsg.textContent = '⚠️ Permission denied. Your account may not have access to create listings. Please contact support.';
+        } else if (err.code === 'PGRST116') {
+          errorMsg.textContent = '⚠️ Database error. The products table may not be properly configured. Please contact support.';
         } else {
-          errorMsg.textContent = err.message || 'Failed to create listing. Please try again.';
+          errorMsg.textContent = `❌ ${err.message || 'Failed to create listing. Please try again.'}`;
         }
       }
     }
