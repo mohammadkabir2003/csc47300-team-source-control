@@ -1,19 +1,52 @@
+// The marketplace page - browse all the stuff students are selling at CCNY.
+// Supports searching, filtering by category, and sorting by price or date.
 import { Product, ProductData } from './types.js';
+import { supabase } from './supabase-client.js';
 
-// global array to hold all products once loaded
+// All the products we've loaded get stored here so we can filter/search through them
 let DATA: Product[] = [];
 
-// immediately load product data when the script runs
-// this is an IIFE (Immediately Invoked Function Expression)
+// Go fetch all the active product listings from the database when the page loads
 (async function (): Promise<void> {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    if (data && Array.isArray(data)) {
+      DATA = data.map((p: any) => ({
+        id: p.id,
+        title: p.name || p.title || '',
+        description: p.description || '',
+        category: p.category || '',
+        price_cents: p.price ? Math.round(Number(p.price) * 100) : 0,
+        currency: 'USD',
+        condition: p.condition || 'Used',
+        location: p.location || '',
+        created_at: p.created_at,
+        seller_id: p.seller_id,
+        tags: p.tags || [],
+        images: p.images || [],
+      }));
+      initCategories();
+      readURLParams();
+      applyFilters();
+      return;
+    }
+  } catch (e) {
+    console.error('[supabase] products fetch failed, falling back to local data:', e);
+  }
+  // If the database is down or not set up, we can still use the local JSON file for development
   try {
     const res = await fetch('data/products.json');
     if (res.ok) {
       const j: ProductData = await res.json();
       DATA = j.products || [];
-      initCategories(); // populate the category dropdown
-      readURLParams(); // check if there's a search/filter in the URL
-      applyFilters(); // show the products
+      initCategories();
+      readURLParams();
+      applyFilters();
     } else {
       console.error('products.json load failed');
     }
@@ -22,7 +55,7 @@ let DATA: Product[] = [];
   }
 })();
 
-// grab all the filter/search elements from the page
+// Find all the form elements we need for searching and filtering products
 const qEl = document.getElementById('q') as HTMLInputElement; // search box
 const catEl = document.getElementById('category') as HTMLSelectElement; // category dropdown
 const sortEl = document.getElementById('sort') as HTMLSelectElement; // sort dropdown
@@ -30,13 +63,13 @@ const formEl = document.getElementById('filters') as HTMLFormElement; // the who
 const resultsEl = document.getElementById('results') as HTMLElement; // where products show up
 const noResultsEl = document.getElementById('no-results') as HTMLElement; // "no results" message
 
-// populate the category dropdown with unique categories from the data
+// Build the category dropdown by looking at what categories actually exist in our products
 function initCategories(): void {
-  // get all unique categories (using Set to deduplicate)
+  // Pull out all the categories and remove duplicates using a Set
   const cats: string[] = Array.from(
     new Set(DATA.map((p) => p.category).filter(Boolean))
   );
-  // add each category as an option in the dropdown
+  // Add each category to the dropdown so people can filter by it
   cats.forEach((c) => {
     const opt = document.createElement('option');
     opt.value = c;
@@ -45,8 +78,8 @@ function initCategories(): void {
   });
 }
 
-// check the URL for search params (like ?q=textbook&category=Textbooks)
-// and pre-fill the form with those values
+// If someone shared a link with search terms in it, we want to automatically apply those filters
+// Checks the URL for things like ?q=textbook and fills in the search box
 function readURLParams(): void {
   const params = new URLSearchParams(location.search);
   const q = params.get('q') || '';
@@ -57,13 +90,12 @@ function readURLParams(): void {
   if (sort) sortEl.value = sort;
 }
 
-// helper to convert text to lowercase for case-insensitive searching
-// helper to convert text to lowercase for case-insensitive searching
+// Make text lowercase so searching isn't case-sensitive - "Textbook" matches "textbook"
 function normalizeText(s: any): string {
   return (s || '').toString().toLowerCase();
 }
 
-// main filtering logic - runs whenever search, category, or sort changes
+// The heart of the marketplace - filters and sorts products based on what the user wants to see
 function applyFilters(): void {
   const q = normalizeText(qEl.value); // search query
   const category = catEl.value; // selected category
@@ -127,24 +159,32 @@ function createCard(p: Product): HTMLElement {
   const a = document.createElement('article');
   a.className = 'card';
   
-  // create a placeholder image using SVG with the product's initials
-  // (we don't have real images, so this looks nicer than nothing)
+  // create thumbnail - use first uploaded image if available, otherwise placeholder
   const img = document.createElement('div');
   img.className = 'thumb';
   img.setAttribute('aria-hidden', 'true');
-  const initials = p.title
-    .split(' ')
-    .slice(0, 2) // first two words
-    .map((s) => s[0]) // first letter of each
-    .join('')
-    .toUpperCase();
-  const svg =
-    `data:image/svg+xml;utf8,` +
-    encodeURIComponent(
-      `<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300'><rect width='100%' height='100%' fill='%23eef2ff'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='40' fill='%23334155' font-family='Arial, Helvetica, sans-serif'>${initials}</text></svg>`
-    );
-  img.style.backgroundImage = `url(${svg})`;
-  img.style.backgroundSize = 'cover';
+  
+  if (p.images && p.images.length > 0) {
+    // use the first uploaded image
+    img.style.backgroundImage = `url(${p.images[0]})`;
+    img.style.backgroundSize = 'cover';
+    img.style.backgroundPosition = 'center';
+  } else {
+    // fallback to placeholder SVG with product initials
+    const initials = p.title
+      .split(' ')
+      .slice(0, 2)
+      .map((s) => s[0])
+      .join('')
+      .toUpperCase();
+    const svg =
+      `data:image/svg+xml;utf8,` +
+      encodeURIComponent(
+        `<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300'><rect width='100%' height='100%' fill='%23eef2ff'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='40' fill='%23334155' font-family='Arial, Helvetica, sans-serif'>${initials}</text></svg>`
+      );
+    img.style.backgroundImage = `url(${svg})`;
+    img.style.backgroundSize = 'cover';
+  }
 
   // build the card body with title, category/location, and price
   const body = document.createElement('div');

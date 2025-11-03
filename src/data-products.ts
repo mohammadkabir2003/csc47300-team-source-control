@@ -1,3 +1,5 @@
+// Sample product data hardcoded here for development and testing.
+// In production, everything comes from the Supabase database instead.
 import { ProductData } from './types.js';
 
 declare global {
@@ -6,6 +8,7 @@ declare global {
   }
 }
 
+// A few fake products so we can test the marketplace even without a database connection
 window.PRODUCT_DATA = {
   "meta": {
     "version": "1.0",
