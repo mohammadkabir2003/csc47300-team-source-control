@@ -31,10 +31,14 @@
       <p class="muted">List an item for sale on the CCNY Exchange marketplace.</p>
     </header>
 
+    <p id="sell-error" class="error-msg" role="alert"></p>
+    <p id="sell-success" class="success-msg" role="alert"></p>
+
     <form class="form" action="#" method="post" novalidate>
       <div class="field">
         <label for="title">Title<span class="req">*</span></label>
         <input class="input" id="title" name="title" type="text" placeholder="e.g., Calculus I (Stewart) 8th Ed." />
+        <div class="field-error" id="title-error"></div>
       </div>
 
       <div class="field two-col">
@@ -48,21 +52,33 @@
             <option>Clothing</option>
             <option>Other</option>
           </select>
+          <div class="field-error" id="category-error"></div>
         </div>
         <div>
-          <label for="price">Price ($)<span class="req">*</span></label>
-          <input class="input" id="price" name="price" type="number" inputmode="decimal" min="0" step="0.01" placeholder="35" />
+          <label for="quantity">Quantity<span class="req">*</span></label>
+          <input class="input" id="quantity" name="quantity" type="number" min="1" value="1" placeholder="1" />
+          <p class="help">How many of this item are you selling?</p>
+          <div class="field-error" id="quantity-error"></div>
         </div>
+      </div>
+
+      <div class="field">
+        <label for="price">Price ($)<span class="req">*</span></label>
+        <input class="input" id="price" name="price" type="number" inputmode="decimal" min="0" step="0.01" placeholder="35" />
+        <p class="help">Price per item</p>
+        <div class="field-error" id="price-error"></div>
       </div>
 
       <div class="field">
         <label for="location">Meet-up Location<span class="req">*</span></label>
         <input class="input" id="location" name="location" type="text" placeholder="e.g., NAC Lobby, Student Center, Towers Lobby" />
+        <div class="field-error" id="location-error"></div>
       </div>
 
       <div class="field">
         <label for="desc">Description<span class="req">*</span></label>
         <textarea class="input" id="desc" name="desc" rows="5" placeholder="Condition, what's included, preferred times to meet…"></textarea>
+        <div class="field-error" id="desc-error"></div>
       </div>
 
       <div class="field">
@@ -70,10 +86,8 @@
         <input class="input" id="images" name="images" type="file" multiple />
         <p class="help">JPEG/PNG recommended. Max ~5MB each. First image becomes the cover.</p>
         <div id="image-previews" style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem"></div>
+        <div class="field-error" id="images-error"></div>
       </div>
-
-      <p id="sell-error" class="error-msg" role="alert"></p>
-      <p id="sell-success" class="success-msg" role="alert"></p>
 
       <div class="actions">
         <button class="btn btn-primary" type="submit">List Item</button>

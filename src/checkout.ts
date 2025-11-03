@@ -50,10 +50,10 @@ async function getCartItems(): Promise<CartItem[]> {
     }
     if (!items) return [];
 
-    return items.map((item: any) => ({
+    return items.map((item) => ({
       product_id: item.product_id,
       quantity: item.quantity,
-      product: item.products
+      product: Array.isArray(item.products) ? item.products[0] : item.products
     })) as CartItem[];
   } catch (err) {
     console.error('[checkout] Network error getting cart items:', err);
@@ -210,6 +210,19 @@ checkoutForm.addEventListener('submit', async function (e: Event): Promise<void>
       throw new Error('Failed to add items to order: ' + itemsError.message);
     }
 
+    // Update quantity_sold for each product purchased
+    for (const item of items) {
+      const { error: updateError } = await supabase.rpc('increment_quantity_sold', {
+        product_id: item.product_id,
+        qty: item.quantity
+      });
+
+      if (updateError) {
+        console.error('[checkout] Error updating quantity_sold for product', item.product_id, ':', updateError);
+        // Don't throw - order was placed successfully, inventory update is less critical
+      }
+    }
+
     // Empty out their cart now that they've checked out
     const { data: cartData } = await supabase
       .from('carts')
@@ -238,15 +251,16 @@ checkoutForm.addEventListener('submit', async function (e: Event): Promise<void>
     // Update the cart badge in the navbar and refresh the summary
     await updateNavCart();
     await renderSummary();
-  } catch (err: any) {
+  } catch (err) {
     console.error('[checkout] Order error:', err);
     // Show a user-friendly error message
-    if (err.message?.includes('fetch') || err.message?.includes('Network')) {
+    const error = err as Error;
+    if (error.message?.includes('fetch') || error.message?.includes('Network')) {
       alert('⚠️ Network error. Unable to place order. Please check your connection and try again.');
-    } else if (err.message?.includes('permission')) {
+    } else if (error.message?.includes('permission')) {
       alert('⚠️ Permission denied. Please make sure you are logged in.');
     } else {
-      alert('Failed to place order: ' + (err.message || 'Unknown error'));
+      alert('Failed to place order: ' + (error.message || 'Unknown error'));
     }
   }
 });

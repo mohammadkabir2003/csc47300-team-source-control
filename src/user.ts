@@ -1,6 +1,7 @@
 // The user profile page where you can see your account info and log out.
 // Shows your email, name, and whether you're approved to sell stuff.
 import { supabase, getSession, isSupabaseConfigured } from './supabase-client.js';
+import { UserMetadata } from './types.js';
 
 // Find the spot on the page where we'll show their profile details
 const profileDiv = document.getElementById("profileDiv") as HTMLDivElement | null;
@@ -33,14 +34,36 @@ async function render(): Promise<void> {
 
     // Pull out the important stuff from their account
     const email = session.user.email || '';
-    const meta: any = session.user.user_metadata || {};
-    const name: string = (meta.full_name || meta.fullName || '').trim() || (email.split('@')[0]);
-    const canSell: string = meta.is_seller ? 'Yes' : 'No';
+    const userId = session.user.id;
+    
+    // Fetch user profile from user_profiles table
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('full_name, is_seller, phone')
+      .eq('id', userId)
+      .single();
+    
+    let name: string = email.split('@')[0];
+    let canSell: string = 'No';
+    let phone: string = 'Not provided';
+    
+    if (profile && !profileError) {
+      name = profile.full_name || email.split('@')[0];
+      canSell = profile.is_seller ? 'Yes' : 'No';
+      phone = profile.phone || 'Not provided';
+    } else {
+      // Fallback to user_metadata if profile doesn't exist yet
+      const meta: UserMetadata = session.user.user_metadata || {};
+      name = (meta.full_name || meta.fullName || '').trim() || email.split('@')[0];
+      canSell = meta.is_seller ? 'Yes' : 'No';
+      phone = (typeof meta.phone === 'string' ? meta.phone : '') || 'Not provided';
+    }
 
     // Show their profile on the page
     profileDiv.innerHTML = `
       <h2>Email: ${email}</h2>
       <h2>Name: ${name}</h2>
+      <h2>Phone: ${phone}</h2>
       <h2>Seller: ${canSell}</h2>
     `;
 

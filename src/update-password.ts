@@ -69,7 +69,7 @@ form.addEventListener('submit', async (e: Event): Promise<void> => {
     setTimeout(() => {
       window.location.href = 'login.html';
     }, 2000);
-  } catch (err: any) {
+  } catch (err) {
     console.error('[update-password] Password update error:', err);
     // Handle network errors specifically
     if (err instanceof TypeError && err.message.includes('fetch')) {

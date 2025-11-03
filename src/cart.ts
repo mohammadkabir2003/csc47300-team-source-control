@@ -114,39 +114,57 @@ async function updateCartItemQuantity(productId: string, quantity: number): Prom
 }
 
 // Draw the cart page with all the items, quantities, and total price
-async function render(): Promise<void> {
-  const list = document.getElementById('cart-list') as HTMLElement;
-  list.innerHTML = '<p>Loading cart...</p>';
+async function renderCart(): Promise<void> {
+  const list = document.getElementById('cart-list');
+  const errorMsg = document.getElementById('cart-error') as HTMLElement;
+  const successMsg = document.getElementById('cart-success') as HTMLElement;
+  const cartSection = document.getElementById('cart-section') as HTMLElement;
   
-  // Check if Supabase is configured before trying to access the database
+  if (!list) return;
+  
+  // Clear any previous messages
+  if (errorMsg) {
+    errorMsg.textContent = '';
+    errorMsg.style.display = 'none';
+  }
+  if (successMsg) {
+    successMsg.textContent = '';
+    successMsg.style.display = 'none';
+  }
+  
+  // If no database available, show a warning
   if (!isSupabaseConfigured) {
-    list.innerHTML = `
-      <div style="padding: 20px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 5px;">
-        <strong>⚠️ Database connection unavailable</strong>
-        <p>Unable to load your cart. Please check your configuration or try again later.</p>
-      </div>
-    `;
-    const subtotalEl = document.getElementById('subtotal');
-    if (subtotalEl) subtotalEl.textContent = '$0.00';
+    if (errorMsg) {
+      errorMsg.textContent = 'Database unavailable. Cannot load cart at this time.';
+      errorMsg.style.display = 'block';
+    }
+    if (cartSection) cartSection.style.display = 'none';
     return;
   }
   
   const session = await getSession();
   if (!session) {
-    list.innerHTML = '<p>Please <a href="login.html">log in</a> to view your cart.</p>';
-    const subtotalEl = document.getElementById('subtotal');
-    if (subtotalEl) subtotalEl.textContent = '$0.00';
+    if (errorMsg) {
+      errorMsg.innerHTML = 'Please <a href="login.html">log in</a> to view your cart.';
+      errorMsg.style.display = 'block';
+    }
+    if (cartSection) cartSection.style.display = 'none';
     return;
   }
   
   const cartItems = await getCartItems();
   
   if (!cartItems.length) {
-    list.innerHTML = '<p>Your cart is empty. Browse listings to add items.</p>';
-    const subtotalEl = document.getElementById('subtotal');
-    if (subtotalEl) subtotalEl.textContent = '$0.00';
+    if (errorMsg) {
+      errorMsg.innerHTML = 'Your cart is empty. <a href="market.html">Browse listings</a> to add items.';
+      errorMsg.style.display = 'block';
+    }
+    if (cartSection) cartSection.style.display = 'none';
     return;
   }
+  
+  // Show cart section when we have items
+  if (cartSection) cartSection.style.display = 'block';
   
   // We have the cart items, now go get the actual product details for each one
   const productIds = cartItems.map((item) => item.product_id);
@@ -157,11 +175,14 @@ async function render(): Promise<void> {
   
   if (error) {
     console.error('Error fetching products:', error);
-    list.innerHTML = '<p>Error loading cart items.</p>';
+    if (errorMsg) {
+      errorMsg.textContent = 'Error loading cart items. Please try refreshing the page.';
+      errorMsg.style.display = 'block';
+    }
     return;
   }
   
-  const products: Product[] = (productsData || []).map((p: any) => ({
+  const products: Product[] = (productsData || []).map((p): Product => ({
     id: p.id,
     title: p.name || p.title || '',
     description: p.description || '',
@@ -185,7 +206,38 @@ async function render(): Promise<void> {
     
     const row = document.createElement('div');
     row.className = 'cart-row';
-    row.innerHTML = `<div class="cart-thumb" aria-hidden="true"></div><div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:center"><div><strong>${
+    
+    // Create thumbnail element with product image or placeholder
+    const thumb = document.createElement('div');
+    thumb.className = 'cart-thumb';
+    thumb.setAttribute('aria-hidden', 'true');
+    
+    if (p.images && p.images.length > 0) {
+      // Use the first uploaded image from Supabase
+      thumb.style.backgroundImage = `url(${p.images[0]})`;
+      thumb.style.backgroundSize = 'cover';
+      thumb.style.backgroundPosition = 'center';
+    } else {
+      // Fallback to placeholder SVG with product initials
+      const initials = p.title
+        .split(' ')
+        .slice(0, 2)
+        .map((s) => s[0])
+        .join('')
+        .toUpperCase();
+      const svg =
+        `data:image/svg+xml;utf8,` +
+        encodeURIComponent(
+          `<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300'><rect width='100%' height='100%' fill='%23eef2ff'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='40' fill='%23334155' font-family='Arial, Helvetica, sans-serif'>${initials}</text></svg>`
+        );
+      thumb.style.backgroundImage = `url(${svg})`;
+      thumb.style.backgroundSize = 'cover';
+    }
+    
+    // Build the rest of the cart row
+    const details = document.createElement('div');
+    details.style.flex = '1';
+    details.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>${
       p.title
     }</strong><div class="muted-small">${p.category} • ${
       p.location || 'N/A'
@@ -194,7 +246,10 @@ async function render(): Promise<void> {
     ).toLocaleString(undefined, {
       style: 'currency',
       currency: p.currency
-    })}</div><div class="muted-small">x <input data-id="${item.product_id}" class="input qty" type="number" min="1" value="${item.quantity}" style="width:64px" /></div><div style="margin-top:.4rem"><a href="#" data-remove="${item.product_id}" class="btn btn-ghost">Remove</a></div></div></div></div>`;
+    })}</div><div class="muted-small">x <input data-id="${item.product_id}" class="input qty" type="number" min="1" value="${item.quantity}" style="width:64px" /></div><div style="margin-top:.4rem"><a href="#" data-remove="${item.product_id}" class="btn btn-ghost btn-sm">Remove</a></div></div></div>`;
+    
+    row.appendChild(thumb);
+    row.appendChild(details);
     list.appendChild(row);
     subtotal += p.price_cents * item.quantity;
   });
@@ -233,6 +288,9 @@ async function render(): Promise<void> {
     });
   });
 }
+
+// Alias for compatibility
+const render = renderCart;
 
 // render the cart when the page loads
 render();

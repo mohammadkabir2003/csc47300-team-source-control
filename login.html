@@ -19,6 +19,7 @@
           <a class="nav-link" href="sell.html">Sell an Item</a>
           <a class="nav-link" href="safety.html">Safety</a>
           <a class="nav-link" href="cart.html">Cart <span id="nav-cart-count" class="cart-badge" style="display:none">0</span></a>
+          <a class="nav-link" href="orders.html">Orders</a>
           <a class="nav-link active" aria-current="page" href="login.html">Log In</a>
           <a class="btn btn-primary btn-sm" href="signup.html">Sign Up</a>
         </nav>
@@ -29,16 +30,16 @@
       <section class="login-section">
         <h1>Login</h1>
 
-        <form id="loginForm" class="form" method="post">
+        <form id="loginForm" class="form" method="post" novalidate>
           <div class="form-group">
             <label for="email">Email</label>
             <input
-              type="email"
+              type="text"
               id="email"
               name="email"
               placeholder="Enter your email"
-              required
             />
+            <div class="field-error" id="email-error"></div>
           </div>
 
           <div class="form-group">
@@ -48,22 +49,20 @@
               id="password"
               name="password"
               placeholder="Enter your password"
-              required
             />
+            <div class="field-error" id="password-error"></div>
           </div>
 
           <button type="submit" class="login-button">Login</button>
         </form>
-
-        <p id="errorMsg" class="error-message"></p>
         
         <div class="inline-helpers">
-          <a class="btn btn-ghost" href="reset-password.html">Forgot password?</a>
+          <a class="btn btn-ghost btn-sm" href="reset-password.html">Forgot password?</a>
         </div>
 
         <div class="actions">
-          <a class="btn btn-primary" href="signup.html">Create an account</a>
-          <a class="btn btn-ghost" href="signup.html">Sign up with email</a>
+          <a class="btn btn-primary btn-sm" href="signup.html">Create an account</a>
+          <a class="btn btn-ghost btn-sm" href="signup.html">Sign up with email</a>
         </div>
       </section>
     </main>

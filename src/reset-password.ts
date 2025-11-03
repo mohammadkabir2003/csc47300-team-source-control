@@ -55,7 +55,7 @@ form.addEventListener('submit', async (e: Event): Promise<void> => {
     // We don't say whether the account exists for security reasons - just tell them to check email
     successMsg.textContent = "If an account with that email exists, you'll receive a password reset link.";
     form.reset();
-  } catch (err: any) {
+  } catch (err) {
     console.error('[reset-password] Password reset error:', err);
     // Handle network errors specifically
     if (err instanceof TypeError && err.message.includes('fetch')) {

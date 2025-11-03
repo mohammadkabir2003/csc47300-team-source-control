@@ -21,7 +21,7 @@
           <a class="nav-link" href="cart.html">Cart <span id="nav-cart-count" class="cart-badge" style="display:none">0</span></a>
           <a class="nav-link" href="orders.html">Orders</a>
           <a class="nav-link" href="login.html">Log In</a>
-          <a class="btn btn-primary btn-sm active" aria-current="page" href="signup.html">Sign Up</a>
+          <a class="btn btn-primary btn-sm" href="signup.html">Sign Up</a>
         </nav>
       </div>
     </header>
@@ -37,6 +37,7 @@
           <div class="field">
             <label for="fullName">Full name <span class="req">*</span></label>
             <input class="input" type="text" id="fullName" name="fullName" placeholder="Jane Doe" required />
+            <div class="field-error" id="fullName-error"></div>
           </div>
 
           <div class="field">
@@ -45,34 +46,45 @@
                    pattern=".+@ccny\.cuny\.edu$"
                    title="Must be a valid CCNY email (name@ccny.cuny.edu)" />
             <p class="help">Use your @ccny.cuny.edu email to verify you're a CCNY student.</p>
+            <div class="field-error" id="email-error"></div>
           </div>
 
           <div class="field two-col">
             <div>
               <label for="password">Password <span class="req">*</span></label>
               <input class="input" type="password" id="password" name="password" placeholder="At least 6 characters" required minlength="6" />
+              <div class="field-error" id="password-error"></div>
             </div>
             <div>
               <label for="confirmPassword">Confirm password <span class="req">*</span></label>
               <input class="input" type="password" id="confirmPassword" name="confirmPassword" placeholder="Repeat password" required />
+              <div class="field-error" id="confirmPassword-error"></div>
             </div>
           </div>
 
           <div class="field">
             <label for="phone">Phone (optional)</label>
-            <input class="input" type="tel" id="phone" name="phone" placeholder="(555) 123-4567" />
+            <input class="input" type="tel" id="phone" name="phone" placeholder="(555) 123-4567" maxlength="14" />
             <p class="help">For buyers to contact you about listings. Will only be visible to interested buyers.</p>
           </div>
 
+          <div class="field">
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+              <input type="checkbox" id="isSeller" name="isSeller" style="width: auto; cursor: pointer;" />
+              <span>I want to sell items on CCNY Exchange</span>
+            </label>
+            <p class="help">Check this if you plan to list items for sale. You can change this later.</p>
+          </div>
+
           <div class="actions">
-            <button type="submit" class="btn btn-primary">Create account</button>
-            <a class="btn btn-ghost" href="login.html">Already have an account?</a>
+            <button type="submit" class="btn btn-primary btn-sm">Create account</button>
+            <a class="btn btn-ghost btn-sm" href="login.html">Already have an account?</a>
           </div>
 
           <p id="formMsg" class="msg" aria-live="polite"></p>
         </form>
         <div class="inline-helpers">
-          <a class="btn btn-ghost" href="reset-password.html">Forgot password?</a>
+          <a class="btn btn-ghost btn-sm" href="reset-password.html">Forgot password?</a>
         </div>
       </section>
     </main>

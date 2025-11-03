@@ -28,10 +28,13 @@
     <main id="main" class="container">
       <header class="page-header"><h1>Your Cart</h1><p class="muted">Local-only demo cart — no payments.</p></header>
 
-      <section class="form">
+      <p id="cart-error" class="error-msg" role="alert"></p>
+      <p id="cart-success" class="success-msg" role="alert"></p>
+
+      <section id="cart-section" class="form">
         <div id="cart-list" class="cart-grid"></div>
 
-        <div style="margin-top:1rem;display:flex;justify-content:space-between;align-items:center">
+        <div id="cart-footer" style="margin-top:1rem;display:flex;justify-content:space-between;align-items:center">
           <div class="muted">Subtotal: <strong id="subtotal">$0.00</strong></div>
           <div>
             <a id="continue" class="btn btn-ghost" href="market.html">Continue browsing</a>
