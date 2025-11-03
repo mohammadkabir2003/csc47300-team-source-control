@@ -87,6 +87,8 @@ export interface Product {
   seller_id?: string;
   created_at: string;
   shipping?: boolean;
+  quantity?: number;
+  quantity_sold?: number;
   inventory?: {
     quantity: number;
     status: string;
@@ -121,4 +123,72 @@ export interface UsersData {
 export interface FormMessage {
   text: string;
   type: 'error' | 'success';
+}
+
+// Database row types - matching Supabase schema
+export interface DBProduct {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  category: string | null;
+  seller_id: string | null;
+  created_at: string;
+  is_active: boolean;
+  location: string | null;
+  images: string[] | null;
+  quantity: number;
+  quantity_sold: number;
+  condition?: string | null;
+  tags?: string[] | null;
+}
+
+export interface DBProductWithSoldStatus extends DBProduct {
+  isSold: boolean;
+}
+
+export interface DBReview {
+  id: string;
+  product_id: string;
+  user_id: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+  reviewerName?: string;
+}
+
+export interface DBCartItem {
+  id: string;
+  cart_id: string;
+  product_id: string;
+  quantity: number;
+  created_at?: string;
+}
+
+export interface DBOrder {
+  id: string;
+  user_id: string;
+  total_price: number;
+  status: string;
+  created_at: string;
+  order_items: DBOrderItem[];
+}
+
+export interface DBOrderItem {
+  id: string;
+  order_id: string;
+  product_id: string;
+  quantity: number;
+  price: number;
+  price_at_purchase?: number;
+  products?: DBProduct | DBProduct[];
+}
+
+export interface UserMetadata {
+  full_name?: string;
+  fullName?: string;
+  is_seller?: boolean;
+  first_name?: string;
+  last_name?: string;
+  [key: string]: unknown;
 }

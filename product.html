@@ -79,19 +79,19 @@
             <h3 style="margin-bottom:1rem">Reviews & Comments</h3>
             
             <!-- Add Review Form -->
-            <div id="review-form-container" class="form" style="margin-bottom:2rem;padding:1.5rem;background:#f8fafc;border-radius:8px">
+            <div id="review-form-container" class="form">
               <h4 style="margin-top:0">Leave a Review</h4>
               <form id="review-form">
                 <div class="field">
-                  <label for="review-rating">Rating<span class="req">*</span></label>
-                  <select class="input" id="review-rating" name="rating" required>
-                    <option value="">Select rating...</option>
-                    <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
-                    <option value="4">⭐⭐⭐⭐ Good</option>
-                    <option value="3">⭐⭐⭐ Average</option>
-                    <option value="2">⭐⭐ Poor</option>
-                    <option value="1">⭐ Very Poor</option>
-                  </select>
+                  <label>Rating<span class="req">*</span></label>
+                  <div class="star-rating" id="star-rating">
+                    <span class="star" data-value="1">★</span>
+                    <span class="star" data-value="2">★</span>
+                    <span class="star" data-value="3">★</span>
+                    <span class="star" data-value="4">★</span>
+                    <span class="star" data-value="5">★</span>
+                  </div>
+                  <input type="hidden" id="review-rating" name="rating" value="" required />
                 </div>
                 <div class="field">
                   <label for="review-comment">Comment<span class="req">*</span></label>

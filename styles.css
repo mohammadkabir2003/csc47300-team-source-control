@@ -190,26 +190,112 @@ h1 {
 .req { color: #ef4444; margin-left: .2rem; }
 .help { margin: .25rem 0 0; font-size: .9rem; color: var(--ink-2); }
 
+/* Alert messages */
+.error-msg, .success-msg {
+  max-width: 720px;
+  margin: 1.5rem auto;
+  padding: 1rem 1.25rem;
+  border-radius: 14px;
+  box-shadow: var(--shadow-1);
+  font-size: 1rem;
+  line-height: 1.6;
+  display: none;
+  animation: slideDown 0.3s ease-out;
+}
+
+.error-msg {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 1px solid #fca5a5;
+  color: #991b1b;
+}
+
+.success-msg {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1px solid #86efac;
+  color: #166534;
+}
+
+.error-msg a, .success-msg a {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.error-msg a:hover, .success-msg a:hover {
+  text-decoration-thickness: 2px;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Cards / grid */
 .grid {
-  display: grid; gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  display: grid; 
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  max-width: 100%;
+}
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}
+@media (min-width: 1200px) {
+  .grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 .card {
   background: var(--card); border: 1px solid var(--border); border-radius: 16px;
   overflow: clip; box-shadow: var(--shadow-1);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 .thumb {
   aspect-ratio: 4 / 3;
   background: linear-gradient(135deg, rgba(99,102,241,.22), rgba(14,165,233,.22));
+  flex-shrink: 0;
 }
 .thumb.t2 { background: linear-gradient(135deg, rgba(14,165,233,.22), rgba(99,102,241,.22)); }
 .thumb.t3 { background: linear-gradient(135deg, rgba(99,102,241,.18), rgba(14,165,233,.28)); }
 .thumb.t4 { background: linear-gradient(135deg, rgba(14,165,233,.18), rgba(99,102,241,.28)); }
 .thumb.t5, .thumb.t6 { background: linear-gradient(135deg, rgba(99,102,241,.22), rgba(14,165,233,.22)); }
-.card-body { padding: .8rem .9rem 1rem; }
-.card-title { margin: 0 0 .25rem; font-size: 1.05rem; }
-.price-row { margin-top: .4rem; display: flex; align-items: center; justify-content: space-between; }
+.card-body { 
+  padding: .8rem .9rem 1rem; 
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.card-title { 
+  margin: 0 0 .25rem; 
+  font-size: 1.05rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.3;
+  max-height: 2.6em;
+}
+.price-row { 
+  margin-top: auto; 
+  padding-top: .4rem;
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+}
 .price { font-weight: 800; }
 
 /* Footer */
@@ -356,3 +442,266 @@ h1 {
 html, body, .card, .btn, input, select, textarea {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
+
+/* Dark mode text overrides for login/signup pages */
+.dark-mode .login-section h1,
+.dark-mode .signup-section h1 {
+  color: var(--ink) !important;
+}
+
+.dark-mode .form-group label,
+.dark-mode label {
+  color: var(--ink) !important;
+}
+
+.dark-mode input[type="text"],
+.dark-mode input[type="password"],
+.dark-mode input[type="email"],
+.dark-mode input[type="tel"],
+.dark-mode .input {
+  color: var(--ink);
+  background: var(--card);
+  border-color: var(--border);
+}
+
+.dark-mode input::placeholder {
+  color: var(--ink-2);
+  opacity: 0.7;
+}
+
+.dark-mode .error-message,
+.dark-mode .error-msg {
+  background: rgba(30, 41, 59, 0.8) !important;
+  border: 1px solid rgba(248, 113, 113, 0.3) !important;
+  color: #fca5a5 !important;
+}
+
+.dark-mode .error-msg a {
+  color: #fcd34d !important;
+  text-decoration: underline;
+}
+
+.dark-mode .success-msg {
+  background: rgba(30, 41, 59, 0.8) !important;
+  border: 1px solid rgba(134, 239, 172, 0.3) !important;
+  color: #86efac !important;
+}
+
+.dark-mode .success-msg a {
+  color: #fcd34d !important;
+  text-decoration: underline;
+}
+
+.dark-mode .msg.error {
+  color: #fca5a5 !important;
+  background: rgba(30, 41, 59, 0.8) !important;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+.dark-mode .msg.success {
+  color: #86efac !important;
+  background: rgba(30, 41, 59, 0.8) !important;
+  border: 1px solid rgba(134, 239, 172, 0.3);
+}
+
+.dark-mode .help,
+.dark-mode .small-note {
+  color: var(--ink-2) !important;
+}
+
+.dark-mode p,
+.dark-mode h1, .dark-mode h2, .dark-mode h3, .dark-mode h4, .dark-mode h5, .dark-mode h6 {
+  color: var(--ink);
+}
+
+.dark-mode .muted {
+  color: var(--ink-2) !important;
+}
+
+.dark-mode .btn {
+  color: var(--ink);
+}
+
+.dark-mode .btn-primary {
+  color: white !important;
+}
+
+.dark-mode .btn-ghost {
+  color: #a5b4fc;
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.dark-mode .btn-ghost:hover {
+  color: #c4b5fd;
+  background: rgba(139, 92, 246, 0.2);
+}
+
+/* Dark mode fixes for product page */
+.dark-mode .main-image,
+.dark-mode .thumb-item {
+  background-color: var(--card);
+}
+
+.dark-mode #review-form-container {
+  background: var(--card) !important;
+  border: 1px solid var(--border);
+}
+
+.dark-mode select,
+.dark-mode select option {
+  color: var(--ink);
+  background: var(--card);
+}
+
+.dark-mode textarea {
+  color: var(--ink);
+  background: var(--card);
+}
+
+.dark-mode .tag {
+  background: rgba(139, 92, 246, 0.15);
+  color: var(--ink);
+}
+
+.dark-mode dl dt {
+  color: var(--ink);
+}
+
+.dark-mode dl dd {
+  color: var(--ink-2);
+}
+
+.dark-mode .field label {
+  color: var(--ink) !important;
+}
+
+.dark-mode .req {
+  color: #fca5a5;
+}
+
+.dark-mode hr {
+  border-color: var(--border);
+}
+
+.dark-mode .card {
+  background: var(--card);
+  border-color: var(--border);
+}
+
+.dark-mode .card-title {
+  color: var(--ink);
+}
+
+.dark-mode .price {
+  color: var(--ink);
+}
+
+.dark-mode .prose h3 {
+  color: var(--ink);
+}
+
+/* Disabled button styles */
+button:disabled,
+.btn:disabled {
+  cursor: not-allowed !important;
+  opacity: 0.6;
+}
+
+.dark-mode button:disabled,
+.dark-mode .btn:disabled {
+  opacity: 0.5;
+}
+
+/* Dark mode fixes for orders page */
+.dark-mode #orders-container > div {
+  background: var(--card) !important;
+  border-color: var(--border) !important;
+}
+
+.dark-mode #orders-container h3,
+.dark-mode #orders-container h4 {
+  color: var(--ink) !important;
+}
+
+.dark-mode #orders-container a {
+  color: var(--ink) !important;
+}
+
+.dark-mode #orders-container .muted-small {
+  color: var(--ink-2) !important;
+}
+
+.dark-mode #orders-container div[style*="background:#f8fafc"],
+.dark-mode #orders-container div[style*="background: #f8fafc"] {
+  background: var(--card) !important;
+}
+
+.dark-mode #orders-container div[style*="border-bottom"] {
+  border-bottom-color: var(--border) !important;
+}
+
+.dark-mode #orders-container strong {
+  color: var(--ink);
+}
+
+/* Dark mode fixes for checkout page */
+.dark-mode #user-info {
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
+}
+
+.dark-mode #user-info h3 {
+  color: var(--ink) !important;
+}
+
+.dark-mode #user-info p {
+  color: var(--ink-2) !important;
+}
+
+.dark-mode #order-summary {
+  color: var(--ink);
+}
+
+.dark-mode #order-summary div {
+  background: var(--card) !important;
+  border-color: var(--border) !important;
+}
+
+.dark-mode #order-summary strong {
+  color: var(--ink) !important;
+}
+
+.dark-mode #order-result {
+  background: var(--card) !important;
+  border-color: var(--border) !important;
+  color: var(--ink) !important;
+}
+
+/* Field-level error toast */
+.field-error {
+  display: none;
+  color: #dc2626;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(239, 68, 68, 0.1);
+  border-left: 3px solid #dc2626;
+  border-radius: 4px;
+  animation: slideDown 0.2s ease-out;
+}
+
+.field-error.show {
+  display: block;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+

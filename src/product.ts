@@ -1,6 +1,6 @@
 // Individual product page - shows one item with all its details, photos, and an add-to-cart button.
 // Also displays who's selling it and how to contact them.
-import { ProductData, Product } from './types.js';
+import { ProductData, Product, DBReview } from './types.js';
 import { supabase, supabaseAdmin } from './supabase-client.js';
 import { updateNavCart } from './cart-utils.js';
 
@@ -66,6 +66,8 @@ async function loadProductById(id: string): Promise<Product | null> {
         seller_id: data.seller_id,
         tags: data.tags || [],
         images: data.images || [],
+        quantity: data.quantity || 1,
+        quantity_sold: data.quantity_sold || 0,
         seller: {
           id: data.seller_id || 'unknown',
           name: sellerName,
@@ -130,6 +132,18 @@ async function addToCart(productId: string, quantity: number): Promise<void> {
     return;
   }
   
+  // First check the product's available quantity
+  const { data: product } = await supabase
+    .from('products')
+    .select('quantity')
+    .eq('id', productId)
+    .single();
+  
+  if (!product) {
+    alert('Product not found.');
+    return;
+  }
+  
   // Check if item already in cart
   const { data: existing } = await supabase
     .from('cart_items')
@@ -137,6 +151,20 @@ async function addToCart(productId: string, quantity: number): Promise<void> {
     .eq('cart_id', cartId)
     .eq('product_id', productId)
     .maybeSingle();
+  
+  const currentCartQty = existing ? existing.quantity : 0;
+  const newTotalQty = currentCartQty + quantity;
+  
+  // Check if new total would exceed available stock
+  if (newTotalQty > product.quantity) {
+    const available = product.quantity - currentCartQty;
+    if (available <= 0) {
+      alert('This item is already at maximum quantity in your cart.');
+    } else {
+      alert(`Only ${available} more item(s) available. You already have ${currentCartQty} in your cart.`);
+    }
+    return;
+  }
   
   if (existing) {
     // Update quantity
@@ -155,7 +183,7 @@ async function addToCart(productId: string, quantity: number): Promise<void> {
 }
 
 // Load reviews for a product
-async function loadReviews(productId: string): Promise<any[]> {
+async function loadReviews(productId: string): Promise<DBReview[]> {
   try {
     const { data, error } = await supabase
       .from('reviews')
@@ -171,7 +199,7 @@ async function loadReviews(productId: string): Promise<any[]> {
     // Fetch reviewer names using admin client if available
     if (data && data.length > 0 && supabaseAdmin) {
       const reviewsWithNames = await Promise.all(
-        data.map(async (review) => {
+        data.map(async (review): Promise<DBReview> => {
           let reviewerName = 'CCNY Student';
           
           if (review.user_id && supabaseAdmin) {
@@ -186,13 +214,13 @@ async function loadReviews(productId: string): Promise<any[]> {
             }
           }
           
-          return { ...review, reviewerName };
+          return { ...review, reviewerName } as DBReview;
         })
       );
       return reviewsWithNames;
     }
     
-    return data || [];
+    return (data || []) as DBReview[];
   } catch (e) {
     console.error('Error loading reviews:', e);
     return [];
@@ -239,20 +267,22 @@ async function renderReviews(productId: string): Promise<void> {
   }
 
   reviewsList.innerHTML = '';
-  reviews.forEach((review: any) => {
-    const stars = '⭐'.repeat(review.rating || 5);
+  reviews.forEach((review) => {
+    const rating = review.rating || 5;
+    const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
     const reviewerName = review.reviewerName || 'CCNY Student';
     const date = new Date(review.created_at).toLocaleDateString();
     
     const reviewDiv = document.createElement('div');
-    reviewDiv.style.cssText = 'padding:1rem;margin-bottom:1rem;background:#fff;border:1px solid #e2e8f0;border-radius:8px';
+    reviewDiv.className = 'review-card';
+    reviewDiv.style.cssText = 'padding:1rem;margin-bottom:1rem;background:var(--card);border:1px solid var(--border);border-radius:8px';
     reviewDiv.innerHTML = `
       <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem">
-        <strong>${reviewerName}</strong>
-        <span class="muted-small">${date}</span>
+        <strong style="color:var(--ink)">${reviewerName}</strong>
+        <span class="muted-small" style="color:var(--ink-2)">${date}</span>
       </div>
-      <div style="margin-bottom:0.5rem">${stars}</div>
-      <p style="margin:0">${review.comment || ''}</p>
+      <div class="review-stars" style="margin-bottom:0.5rem">${stars}</div>
+      <p style="margin:0;color:var(--ink)">${review.comment || ''}</p>
     `;
     reviewsList.appendChild(reviewDiv);
   });
@@ -360,25 +390,231 @@ async function renderReviews(productId: string): Promise<void> {
     if (thumbs) thumbs.appendChild(ti);
   }
 
-  const addCartBtn = document.getElementById('add-cart');
+  const addCartBtn = document.getElementById('add-cart') as HTMLButtonElement;
+  const qtyInput = document.getElementById('qty') as HTMLInputElement;
+  
+  // Helper function to update button state based on cart quantity
+  async function updateAddToCartButton(productId: string, availableQty: number): Promise<void> {
+    if (!addCartBtn) return;
+    
+    const session = await supabase.auth.getSession();
+    if (!session.data.session) return;
+    
+    // Check how many are already in cart
+    const cartId = await getOrCreateCart();
+    if (!cartId) return;
+    
+    const { data: existing } = await supabase
+      .from('cart_items')
+      .select('quantity')
+      .eq('cart_id', cartId)
+      .eq('product_id', productId)
+      .maybeSingle();
+    
+    const currentCartQty = existing ? existing.quantity : 0;
+    const remaining = availableQty - currentCartQty;
+    
+    if (remaining <= 0) {
+      // Already at max in cart
+      addCartBtn.disabled = true;
+      addCartBtn.textContent = 'Maximum in Cart';
+      addCartBtn.style.cursor = 'not-allowed';
+      addCartBtn.style.opacity = '0.6';
+      addCartBtn.title = `You already have ${currentCartQty} in your cart (maximum available)`;
+      addCartBtn.style.background = '#6c757d';
+      if (qtyInput) qtyInput.disabled = true;
+    } else {
+      // Update max on input
+      if (qtyInput) {
+        qtyInput.max = remaining.toString();
+        if (parseInt(qtyInput.value) > remaining) {
+          qtyInput.value = remaining.toString();
+        }
+      }
+    }
+  }
+  
   if (addCartBtn) {
-    addCartBtn.addEventListener('click', async (): Promise<void> => {
-      const qtyInput = document.getElementById('qty') as HTMLInputElement;
-      const qty = Math.max(1, parseInt(qtyInput.value || '1', 10));
-      await addToCart(product.id, qty);
-      alert(`Added ${qty} × ${product.title} to cart`);
-    });
+    // Check if product is sold out
+    const quantity = product.quantity || 1;
+    const quantitySold = product.quantity_sold || 0;
+    const availableQty = quantity - quantitySold;
+    const isSold = availableQty <= 0;
+
+    // Display available quantity to user
+    const quantityDisplay = document.createElement('div');
+    quantityDisplay.id = 'quantity-available';
+    quantityDisplay.style.cssText = 'margin-top: 0.5rem; font-size: 0.875rem; font-weight: 600;';
+    
+    if (isSold) {
+      quantityDisplay.style.color = '#dc3545';
+      quantityDisplay.textContent = '❌ Sold Out';
+    } else if (availableQty === 1) {
+      quantityDisplay.style.color = '#ff6b6b';
+      quantityDisplay.textContent = `⚠️ Only 1 left!`;
+    } else {
+      quantityDisplay.style.color = '#28a745';
+      quantityDisplay.textContent = `✓ ${availableQty} available`;
+    }
+    
+    // Insert quantity display near the add to cart button
+    const cartSection = addCartBtn.parentElement;
+    if (cartSection && !document.getElementById('quantity-available')) {
+      cartSection.appendChild(quantityDisplay);
+    }
+
+    // Set max quantity on input field
+    if (qtyInput) {
+      qtyInput.max = availableQty.toString();
+      qtyInput.value = '1';
+      
+      // Add input validation
+      qtyInput.addEventListener('input', () => {
+        const inputVal = parseInt(qtyInput.value || '1', 10);
+        if (inputVal > availableQty) {
+          qtyInput.value = availableQty.toString();
+          alert(`Only ${availableQty} items available!`);
+        } else if (inputVal < 1) {
+          qtyInput.value = '1';
+        }
+      });
+    }
+
+    if (isSold) {
+      // Product is sold out - disable button
+      addCartBtn.disabled = true;
+      addCartBtn.textContent = 'Sold Out';
+      addCartBtn.style.cursor = 'not-allowed';
+      addCartBtn.style.opacity = '0.6';
+      addCartBtn.title = 'This item is sold out';
+      addCartBtn.style.background = 'linear-gradient(135deg, var(--accent-1), var(--accent-2))';
+      if (qtyInput) qtyInput.disabled = true;
+    } else {
+      // Check if user is logged in
+      const session = await supabase.auth.getSession();
+      
+      if (!session.data.session) {
+        // User not logged in - disable button and show login message
+        addCartBtn.disabled = true;
+        addCartBtn.textContent = 'Log In to Add to Cart';
+        addCartBtn.style.cursor = 'not-allowed';
+        addCartBtn.style.opacity = '0.6';
+        addCartBtn.title = 'Please log in to add items to your cart';
+        
+        // Make button redirect to login when clicked
+        addCartBtn.addEventListener('click', (): void => {
+          if (confirm('You need to log in to add items to your cart. Go to login page?')) {
+            window.location.href = 'login.html';
+          }
+        });
+      } else if (session.data.session.user.id === product.seller_id) {
+        // User is viewing their own product - can't buy your own stuff!
+        addCartBtn.disabled = true;
+        addCartBtn.textContent = 'Your Own Product';
+        addCartBtn.style.cursor = 'not-allowed';
+        addCartBtn.style.opacity = '0.6';
+        addCartBtn.title = "You can't add your own products to cart";
+      } else {
+        // Check cart status on page load
+        await updateAddToCartButton(product.id, availableQty);
+        
+        // User is logged in and viewing someone else's product - normal behavior
+        addCartBtn.addEventListener('click', async (): Promise<void> => {
+          const qtyInput = document.getElementById('qty') as HTMLInputElement;
+          const requestedQty = Math.max(1, parseInt(qtyInput.value || '1', 10));
+          const availableQty = (product.quantity || 1) - (product.quantity_sold || 0);
+          
+          // Validate quantity before adding to cart
+          if (requestedQty > availableQty) {
+            alert(`Sorry, only ${availableQty} item${availableQty !== 1 ? 's' : ''} available!`);
+            qtyInput.value = availableQty.toString();
+            return;
+          }
+          
+          await addToCart(product.id, requestedQty);
+          
+          // Update button state after adding
+          await updateAddToCartButton(product.id, availableQty);
+          
+          // Show success feedback only if button is still enabled
+          if (!addCartBtn.disabled) {
+            const originalText = addCartBtn.textContent;
+            addCartBtn.textContent = '✓ Added!';
+            const tempDisabled = true;
+            addCartBtn.disabled = tempDisabled;
+            setTimeout(() => {
+              addCartBtn.textContent = originalText || 'Add to Cart';
+              addCartBtn.disabled = false;
+            }, 1500);
+          }
+        });
+      }
+    }
   }
 
   // Load reviews for this product
   await renderReviews(product.id);
 
-  // Handle review form submission
+  // Handle review form - check if user is logged in
+  const reviewFormContainer = document.getElementById('review-form-container') as HTMLElement;
   const reviewForm = document.getElementById('review-form') as HTMLFormElement;
   const reviewError = document.getElementById('review-error') as HTMLElement;
   const reviewSuccess = document.getElementById('review-success') as HTMLElement;
   
-  if (reviewForm) {
+  // Check if user is logged in for reviews
+  const sessionForReview = await supabase.auth.getSession();
+  
+  if (!sessionForReview.data.session) {
+    // User not logged in - hide form and show login message
+    if (reviewFormContainer) {
+      reviewFormContainer.innerHTML = `
+        <div class="error-msg" style="display: block;">
+          Please <a href="login.html">log in</a> to leave a review.
+        </div>
+      `;
+    }
+  } else if (reviewForm) {
+    // User is logged in - enable review form
+    
+    // Initialize star rating system
+    const starContainer = document.getElementById('star-rating');
+    const ratingInput = document.getElementById('review-rating') as HTMLInputElement;
+    let selectedRating = 0;
+    
+    if (starContainer) {
+      const stars = starContainer.querySelectorAll('.star');
+      
+      // Handle star click
+      stars.forEach((star, index) => {
+        star.addEventListener('click', () => {
+          selectedRating = index + 1;
+          ratingInput.value = selectedRating.toString();
+          updateStars(selectedRating);
+        });
+        
+        // Handle star hover
+        star.addEventListener('mouseenter', () => {
+          updateStars(index + 1, true);
+        });
+      });
+      
+      // Reset hover effect on mouse leave
+      starContainer.addEventListener('mouseleave', () => {
+        updateStars(selectedRating);
+      });
+      
+      // Update star display
+      function updateStars(rating: number, isHover: boolean = false): void {
+        stars.forEach((star, index) => {
+          star.textContent = index < rating ? '★' : '☆';
+          star.classList.remove('filled', 'hovered');
+          if (index < rating) {
+            star.classList.add(isHover ? 'hovered' : 'filled');
+          }
+        });
+      }
+    }
+    
     reviewForm.addEventListener('submit', async (e: Event): Promise<void> => {
       e.preventDefault();
       
@@ -390,7 +626,7 @@ async function renderReviews(productId: string): Promise<void> {
       const comment = formData.get('comment') as string;
       
       if (!rating || !comment) {
-        reviewError.textContent = 'Please fill in all fields';
+        reviewError.textContent = 'Please select a rating and write a comment';
         reviewError.style.display = 'block';
         return;
       }
@@ -401,6 +637,13 @@ async function renderReviews(productId: string): Promise<void> {
         reviewSuccess.textContent = 'Review submitted successfully!';
         reviewSuccess.style.display = 'block';
         reviewForm.reset();
+        selectedRating = 0;
+        if (starContainer) {
+          starContainer.querySelectorAll('.star').forEach(star => {
+            star.textContent = '☆';
+            star.classList.remove('filled', 'hovered');
+          });
+        }
         await renderReviews(product.id);
       } else {
         reviewError.textContent = 'Failed to submit review. Please try again.';

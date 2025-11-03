@@ -1,10 +1,12 @@
 // The marketplace page - browse all the stuff students are selling at CCNY.
 // Supports searching, filtering by category, and sorting by price or date.
-import { Product, ProductData } from './types.js';
+import { Product, ProductData, DBProduct, DBProductWithSoldStatus } from './types.js';
 import { supabase, isSupabaseConfigured } from './supabase-client.js';
 
 // All the products we've loaded get stored here so we can filter/search through them
 let DATA: Product[] = [];
+// Store ALL products including sold items for the "Sold Items" category
+let ALL_DATA: DBProductWithSoldStatus[] = [];
 
 // Helper function to show error messages to the user
 function showErrorBanner(message: string): void {
@@ -30,6 +32,7 @@ function showErrorBanner(message: string): void {
   }
 
   try {
+    // Get all active products, but we'll filter sold items client-side
     const { data, error } = await supabase
       .from('products')
       .select('*')
@@ -42,9 +45,18 @@ function showErrorBanner(message: string): void {
     }
     
     if (data && Array.isArray(data)) {
-      DATA = data.map((p: any) => ({
+      // Store all products (including sold) for filtering
+      ALL_DATA = (data as DBProduct[]).map((p) => ({
+        ...p,
+        isSold: (p.quantity_sold || 0) >= (p.quantity || 1)
+      }));
+
+      // By default, only show available items (not sold)
+      const availableData = ALL_DATA.filter((p) => !p.isSold);
+
+      DATA = availableData.map((p): Product => ({
         id: p.id,
-        title: p.name || p.title || '',
+        title: p.name || '',
         description: p.description || '',
         category: p.category || '',
         price_cents: p.price ? Math.round(Number(p.price) * 100) : 0,
@@ -52,9 +64,11 @@ function showErrorBanner(message: string): void {
         condition: p.condition || 'Used',
         location: p.location || '',
         created_at: p.created_at,
-        seller_id: p.seller_id,
+        seller_id: p.seller_id || undefined,
         tags: p.tags || [],
         images: p.images || [],
+        quantity: p.quantity || 1,
+        quantity_sold: p.quantity_sold || 0,
       }));
       initCategories();
       readURLParams();
@@ -111,6 +125,12 @@ function initCategories(): void {
     opt.textContent = c;
     catEl.appendChild(opt);
   });
+  
+  // Add a "Sold Items" option at the end
+  const soldOpt = document.createElement('option');
+  soldOpt.value = '__SOLD__';
+  soldOpt.textContent = 'Sold Items';
+  catEl.appendChild(soldOpt);
 }
 
 // If someone shared a link with search terms in it, we want to automatically apply those filters
@@ -126,7 +146,7 @@ function readURLParams(): void {
 }
 
 // Make text lowercase so searching isn't case-sensitive - "Textbook" matches "textbook"
-function normalizeText(s: any): string {
+function normalizeText(s: string | number | null | undefined): string {
   return (s || '').toString().toLowerCase();
 }
 
@@ -136,10 +156,34 @@ function applyFilters(): void {
   const category = catEl.value; // selected category
   const sort = sortEl.value; // sort option
 
+  // Special handling for "Sold Items" category
+  let sourceData: Product[];
+  if (category === '__SOLD__') {
+    // Show only sold items
+    const soldData = ALL_DATA.filter((p) => p.isSold);
+    sourceData = soldData.map((p): Product => ({
+      id: p.id,
+      title: p.name || '',
+      description: p.description || '',
+      category: p.category || '',
+      price_cents: p.price ? Math.round(Number(p.price) * 100) : 0,
+      currency: 'USD',
+      condition: p.condition || 'Used',
+      location: p.location || '',
+      created_at: p.created_at,
+      seller_id: p.seller_id || undefined,
+      tags: p.tags || [],
+      images: p.images || [],
+    }));
+  } else {
+    // Use regular available products
+    sourceData = DATA;
+  }
+
   // filter products based on category and search query
-  let out = DATA.filter((p) => {
-    // if a category is selected, only show products in that category
-    if (category && p.category !== category) return false;
+  let out = sourceData.filter((p) => {
+    // if a category is selected (and not "Sold Items"), only show products in that category
+    if (category && category !== '__SOLD__' && p.category !== category) return false;
     
     // if there's no search query, include this product
     if (!q) return true;
@@ -190,14 +234,31 @@ function applyFilters(): void {
 
 // create a card element for a single product
 // this builds the HTML for the product thumbnail, title, price, etc
-function createCard(p: Product): HTMLElement {
+async function createCard(p: Product): Promise<HTMLElement> {
   const a = document.createElement('article');
   a.className = 'card';
+  
+  // Check if this product belongs to the current user
+  let isOwnProduct = false;
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session && session.user.id === p.seller_id) {
+      isOwnProduct = true;
+    }
+  } catch (e) {
+    // Ignore errors, just don't mark as own product
+  }
   
   // create thumbnail - use first uploaded image if available, otherwise placeholder
   const img = document.createElement('div');
   img.className = 'thumb';
   img.setAttribute('aria-hidden', 'true');
+  
+  // Add opacity and badge if it's the user's own product
+  if (isOwnProduct) {
+    img.style.opacity = '0.6';
+    img.style.position = 'relative';
+  }
   
   if (p.images && p.images.length > 0) {
     // use the first uploaded image
@@ -224,12 +285,42 @@ function createCard(p: Product): HTMLElement {
   // build the card body with title, category/location, and price
   const body = document.createElement('div');
   body.className = 'card-body';
+  
+  // Add "Your Product" badge if it's the user's own listing
+  if (isOwnProduct) {
+    const badge = document.createElement('span');
+    badge.textContent = 'Your Product';
+    badge.style.cssText = 'display:inline-block;background:linear-gradient(90deg, #6366f1, #8b5cf6);color:white;padding:0.25rem 0.5rem;border-radius:4px;font-size:0.75rem;font-weight:600;margin-bottom:0.5rem;';
+    body.appendChild(badge);
+  }
+  
   const h3 = document.createElement('h3');
   h3.className = 'card-title';
   h3.textContent = p.title;
   const meta = document.createElement('p');
   meta.className = 'muted';
   meta.textContent = `${p.category} • ${p.location}`;
+  
+  // Add quantity information if available
+  if (p.quantity !== undefined && p.quantity_sold !== undefined) {
+    const availableQty = p.quantity - p.quantity_sold;
+    const qtyInfo = document.createElement('p');
+    qtyInfo.style.cssText = 'font-size: 0.875rem; margin: 0.25rem 0; font-weight: 600;';
+    
+    if (availableQty <= 0) {
+      qtyInfo.style.color = '#dc3545';
+      qtyInfo.textContent = '❌ Sold Out';
+    } else if (availableQty === 1) {
+      qtyInfo.style.color = '#ff6b6b';
+      qtyInfo.textContent = `⚠️ Only 1 left`;
+    } else {
+      qtyInfo.style.color = '#28a745';
+      qtyInfo.textContent = `✓ ${availableQty} available`;
+    }
+    
+    body.appendChild(qtyInfo);
+  }
+  
   const priceRow = document.createElement('div');
   priceRow.className = 'price-row';
   const price = document.createElement('span');
@@ -240,7 +331,7 @@ function createCard(p: Product): HTMLElement {
   });
   // link to the product detail page
   const btn = document.createElement('a');
-  btn.className = 'btn btn-sm';
+  btn.className = 'btn btn-primary btn-sm';
   btn.href = `product.html?id=${encodeURIComponent(p.id)}`;
   btn.textContent = 'View';
   priceRow.appendChild(price);
@@ -255,7 +346,7 @@ function createCard(p: Product): HTMLElement {
 }
 
 // take a list of products and display them on the page
-function renderResults(list: Product[]): void {
+async function renderResults(list: Product[]): Promise<void> {
   resultsEl.innerHTML = ''; // clear old results
   if (!list.length) {
     // no matches, show the "no results" message
@@ -264,12 +355,13 @@ function renderResults(list: Product[]): void {
   }
   noResultsEl.style.display = 'none';
   // create a card for each product and add it to the page
-  list.forEach((p) => {
-    resultsEl.appendChild(createCard(p));
-  });
+  for (const p of list) {
+    const card = await createCard(p);
+    resultsEl.appendChild(card);
+  }
 }
 
-function debounce<T extends (...args: any[]) => any>(
+function debounce<T extends (...args: never[]) => void>(
   fn: T,
   wait: number = 150
 ): (...args: Parameters<T>) => void {

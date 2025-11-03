@@ -1,6 +1,7 @@
 // The sell page where students can list stuff they want to sell.
 // Handles uploading product photos to Supabase storage and creating the listing.
 import { supabase, getSession, isSupabaseConfigured } from './supabase-client.js';
+import { UserMetadata } from './types.js';
 
 // Where we store product images - this bucket was created in the Supabase dashboard
 const BUCKET_NAME = 'Product_Images'; // created via Supabase UI (public)
@@ -8,6 +9,94 @@ const BUCKET_NAME = 'Product_Images'; // created via Supabase UI (public)
 const sellForm = document.querySelector('.form') as HTMLFormElement;
 const errorMsg = document.getElementById('sell-error') as HTMLElement;
 const successMsg = document.getElementById('sell-success') as HTMLElement;
+
+// Show error toast below a specific field
+function showFieldError(fieldId: string, message: string): void {
+  const errorEl = document.getElementById(`${fieldId}-error`);
+  if (errorEl) {
+    errorEl.textContent = message;
+    errorEl.classList.add('show');
+  }
+}
+
+// Clear all field error toasts
+function clearFieldErrors(): void {
+  const errorElements = document.querySelectorAll('.field-error');
+  errorElements.forEach(el => {
+    el.textContent = '';
+    el.classList.remove('show');
+  });
+}
+
+// Check session immediately when page loads - hide form if not logged in or not a seller
+(async () => {
+  const session = await getSession();
+  if (!session) {
+    console.log('[sell] User not logged in, hiding form');
+    if (sellForm) {
+      sellForm.style.display = 'none';
+    }
+    if (errorMsg) {
+      errorMsg.textContent = 'You must be logged in to list an item. ';
+      errorMsg.style.display = 'block';
+      // Add a login link using your existing UI pattern
+      const loginLink = document.createElement('a');
+      loginLink.href = 'login.html';
+      loginLink.textContent = 'Log in here';
+      errorMsg.appendChild(loginLink);
+      
+      const orText = document.createTextNode(' or ');
+      errorMsg.appendChild(orText);
+      
+      const signupLink = document.createElement('a');
+      signupLink.href = 'signup.html';
+      signupLink.textContent = 'create an account';
+      errorMsg.appendChild(signupLink);
+      
+      errorMsg.appendChild(document.createTextNode('.'));
+    }
+    return;
+  }
+  console.log('[sell] User logged in:', session.user.email);
+  
+  // Check if user is a seller by querying user_profiles table
+  const { data: profile, error: profileError } = await supabase
+    .from('user_profiles')
+    .select('is_seller')
+    .eq('id', session.user.id)
+    .single();
+  
+  let isSeller = false;
+  
+  if (profile && !profileError) {
+    isSeller = profile.is_seller === true;
+  } else {
+    // Fallback to user_metadata if profile doesn't exist
+    const meta: UserMetadata = session.user.user_metadata || {};
+    isSeller = meta.is_seller === true;
+  }
+  
+  if (!isSeller) {
+    console.log('[sell] User is not a seller, hiding form');
+    if (sellForm) {
+      sellForm.style.display = 'none';
+    }
+    if (errorMsg) {
+      errorMsg.textContent = 'You need seller permissions to list items. Please ';
+      errorMsg.style.display = 'block';
+      
+      const signupLink = document.createElement('a');
+      signupLink.href = 'signup.html';
+      signupLink.textContent = 'create a new account';
+      errorMsg.appendChild(signupLink);
+      
+      errorMsg.appendChild(document.createTextNode(' with seller access.'));
+    }
+    return;
+  }
+  
+  console.log('[sell] User is a verified seller');
+})();
 
 // Check if Supabase is available right when the page loads
 if (!isSupabaseConfigured && sellForm) {
@@ -115,16 +204,29 @@ if (!isSupabaseConfigured && sellForm && errorMsg) {
 }
 
 if (sellForm) {
+  console.log('[sell] Form submit handler attached');
   sellForm.addEventListener('submit', async (e: Event): Promise<void> => {
     e.preventDefault();
+    console.log('[sell] Form submitted!');
     
-    // Wipe out any old error or success messages from previous attempts
-    if (errorMsg) errorMsg.textContent = '';
-    if (successMsg) successMsg.textContent = '';
+    // Show processing message immediately
+    if (successMsg) {
+      successMsg.textContent = '⏳ Processing your listing...';
+      successMsg.style.display = 'block';
+    }
+    
+    // Wipe out any old error messages from previous attempts
+    if (errorMsg) {
+      errorMsg.textContent = '';
+      errorMsg.style.display = 'none';
+    }
     
     // Double-check that database is available
     if (!isSupabaseConfigured) {
-      if (errorMsg) errorMsg.textContent = '⚠️ Database connection unavailable. Cannot list products.';
+      if (errorMsg) {
+        errorMsg.textContent = '⚠️ Database connection unavailable. Cannot list products.';
+        errorMsg.style.display = 'block';
+      }
       return;
     }
     
@@ -143,59 +245,61 @@ if (sellForm) {
     const formData = new FormData(sellForm);
     const title = (formData.get('title') as string || '').trim();
     const category = (formData.get('category') as string || '').trim();
+    const quantityStr = (formData.get('quantity') as string || '').trim();
+    const quantity = parseInt(quantityStr, 10);
     const priceStr = (formData.get('price') as string || '').trim();
     const price = parseFloat(priceStr);
     const location = (formData.get('location') as string || '').trim();
     const description = (formData.get('desc') as string || '').trim();
     const files = (document.getElementById('images') as HTMLInputElement | null)?.files || null;
     
-    // ===== Detailed Frontend Validation =====
+    // ===== Collect ALL validation errors at once =====
+    clearFieldErrors();
     
     // Error 1: Title is missing
     if (!title) {
-      if (errorMsg) errorMsg.textContent = '❌ Please enter a product title.';
-      return;
-    }
-    
-    // Error 2: Title is too short
-    if (title.length < 3) {
-      if (errorMsg) errorMsg.textContent = '❌ Product title must be at least 3 characters long.';
-      return;
+      console.log('[sell] Validation failed: No title');
+      showFieldError('title', 'Please enter a product title');
+    } else if (title.length < 3) {
+      // Error 2: Title is too short
+      showFieldError('title', 'Title must be at least 3 characters long');
     }
     
     // Error 3: Category is missing
     if (!category) {
-      if (errorMsg) errorMsg.textContent = '❌ Please select a category.';
-      return;
+      showFieldError('category', 'Please select a category');
+    }
+
+    // Error 4: Quantity validation
+    if (isNaN(quantity) || quantityStr === '') {
+      showFieldError('quantity', 'Please enter a valid quantity');
+    } else if (quantity < 1) {
+      showFieldError('quantity', 'Quantity must be at least 1');
     }
     
-    // Error 4: Price is missing or invalid
+    // Error 5: Price validation
     if (isNaN(price) || priceStr === '') {
-      if (errorMsg) errorMsg.textContent = '❌ Please enter a valid price.';
-      return;
-    }
-    
-    // Error 5: Price is negative or zero
-    if (price <= 0) {
-      if (errorMsg) errorMsg.textContent = '❌ Price must be greater than $0.';
-      return;
+      showFieldError('price', 'Please enter a valid price');
+    } else if (price <= 0) {
+      showFieldError('price', 'Price must be greater than $0');
     }
     
     // Error 6: Location is missing
     if (!location) {
-      if (errorMsg) errorMsg.textContent = '❌ Please enter a pickup location.';
-      return;
+      showFieldError('location', 'Please enter a pickup location');
     }
     
-    // Error 7: Description is missing
+    // Error 7: Description validation
     if (!description) {
-      if (errorMsg) errorMsg.textContent = '❌ Please enter a product description.';
-      return;
+      showFieldError('desc', 'Please enter a product description');
+    } else if (description.length < 10) {
+      // Error 8: Description is too short
+      showFieldError('desc', 'Description must be at least 10 characters long');
     }
     
-    // Error 8: Description is too short
-    if (description.length < 10) {
-      if (errorMsg) errorMsg.textContent = '❌ Description must be at least 10 characters long.';
+    // Check if any field errors were shown
+    const hasFieldErrors = document.querySelector('.field-error.show') !== null;
+    if (hasFieldErrors) {
       return;
     }
     
@@ -205,7 +309,7 @@ if (sellForm) {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         if (!allowedTypes.includes(file.type.toLowerCase())) {
-          if (errorMsg) errorMsg.textContent = `❌ Invalid file type: "${file.name}". Only image files (JPEG, PNG, GIF, WebP) are allowed.`;
+          showFieldError('images', `Invalid file type: "${file.name}". Only JPEG, PNG, GIF, WebP allowed`);
           return;
         }
       }
@@ -216,14 +320,13 @@ if (sellForm) {
       let imageUrls: string[] = [];
       try {
         imageUrls = await uploadImages(files, session.user.id);
-      } catch (imgErr: any) {
+      } catch (imgErr) {
         console.error('[sell] Image upload failed:', imgErr);
-        if (errorMsg) {
-          if (imgErr.message?.includes('fetch') || imgErr.message?.includes('Network')) {
-            errorMsg.textContent = '⚠️ Network error uploading images. Please check your connection.';
-          } else {
-            errorMsg.textContent = imgErr.message || 'Image upload failed. Check file size/type and try again.';
-          }
+        const error = imgErr as Error;
+        if (error.message?.includes('fetch') || error.message?.includes('Network')) {
+          showFieldError('images', 'Network error uploading images. Check your connection');
+        } else {
+          showFieldError('images', error.message || 'Image upload failed. Check file size/type');
         }
         return;
       }
@@ -237,7 +340,9 @@ if (sellForm) {
         location: location,
         images: imageUrls,
         seller_id: session.user.id,
-        is_active: true
+        is_active: true,
+        quantity: quantity,
+        quantity_sold: 0
       };
       console.log('[sell] Creating product with payload', payload);
 
@@ -252,26 +357,28 @@ if (sellForm) {
       }
       
       if (successMsg) {
-        successMsg.textContent = 'Product listed successfully! Redirecting to marketplace...';
+        successMsg.textContent = '✅ Product listed successfully! Redirecting to marketplace...';
+        successMsg.style.display = 'block';
         sellForm.reset();
         setTimeout(() => {
           window.location.href = 'market.html';
         }, 2000);
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('[sell] Error creating product:', err);
       console.error('[sell] Full error details:', JSON.stringify(err, null, 2));
+      const error = err as Error;
       if (errorMsg) {
         errorMsg.style.display = 'block';
         // Provide more helpful error messages based on what went wrong
-        if (err.message?.includes('fetch') || err.message?.includes('Network')) {
+        if (error.message?.includes('fetch') || error.message?.includes('Network')) {
           errorMsg.textContent = '⚠️ Network error. Unable to create listing. Please check your connection.';
-        } else if (err.message?.includes('permission') || err.message?.includes('policy') || err.message?.includes('RLS')) {
+        } else if (error.message?.includes('permission') || error.message?.includes('policy') || error.message?.includes('RLS')) {
           errorMsg.textContent = '⚠️ Permission denied. Your account may not have access to create listings. Please contact support.';
-        } else if (err.code === 'PGRST116') {
+        } else if ('code' in error && (error as { code?: string }).code === 'PGRST116') {
           errorMsg.textContent = '⚠️ Database error. The products table may not be properly configured. Please contact support.';
         } else {
-          errorMsg.textContent = `❌ ${err.message || 'Failed to create listing. Please try again.'}`;
+          errorMsg.textContent = `❌ ${error.message || 'Failed to create listing. Please try again.'}`;
         }
       }
     }

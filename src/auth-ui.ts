@@ -1,6 +1,7 @@
 // The navbar authentication UI that shows login/signup links or profile/logout based on login state.
 // Listens for auth changes and updates the navbar automatically when someone logs in or out.
-import { supabase, getSession, onAuthStateChange } from './supabase-client.js';
+import { supabase, getSession } from './supabase-client.js';
+import { UserMetadata } from './types.js';
 
 // ID for the navbar element that shows logout button
 const STATUS_ELEMENT_ID = 'headerUserStatus';
@@ -59,7 +60,7 @@ document.addEventListener('DOMContentLoaded', (): void => {
     return container;
   }
 
-  function getUserDisplayName(email: string | null, meta?: any): string {
+  function getUserDisplayName(email: string | null, meta?: UserMetadata): string {
     // prefer a friendly name from user metadata if provided
     const full = meta?.full_name || meta?.fullName;
     if (typeof full === 'string' && full.trim()) return full.trim();
@@ -76,7 +77,7 @@ document.addEventListener('DOMContentLoaded', (): void => {
 
   // when someone's logged in, show their name and a logout button
   // hide the login and signup links since they don't need those anymore
-  function showLoggedInState(email: string, meta?: any): void {
+  function showLoggedInState(email: string, meta?: UserMetadata): void {
     const displayName = getUserDisplayName(email, meta);
     const firstName = displayName.split(' ')[0]; // just show first name in nav to save space
 
@@ -138,5 +139,5 @@ document.addEventListener('DOMContentLoaded', (): void => {
   // Update the navbar right away when the page loads
   render();
   // Keep watching for login/logout events so the navbar always stays current
-  onAuthStateChange(() => { render(); });
+  supabase.auth.onAuthStateChange(() => { render(); });
 });
