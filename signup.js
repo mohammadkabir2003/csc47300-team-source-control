@@ -50,11 +50,16 @@ document.addEventListener("DOMContentLoaded", () => {
       users.push(user);
       localStorage.setItem("users", JSON.stringify(users));
 
-      showMessage("Account created! Redirecting to login...", "success");
+      // also sign the user in for this session so they can view their profile immediately
+      const sessionUser = { ...user };
+      if (sessionUser.password) delete sessionUser.password;
+      sessionStorage.setItem("loggedInUser", JSON.stringify(sessionUser));
+
+      showMessage("Account created! Redirecting to your profile...", "success");
 
       setTimeout(() => {
-        window.location.href = "login.html";
-      }, 1600);
+        window.location.href = "user.html";
+      }, 900);
     } catch (err) {
       console.error(err);
       showMessage(
