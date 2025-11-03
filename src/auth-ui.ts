@@ -1,7 +1,5 @@
-import { UserSession } from './types.js';
+import { supabase, getSession, onAuthStateChange } from './supabase-client.js';
 
-// where we store the logged-in user in sessionStorage
-const STORAGE_KEY = 'loggedInUser';
 // ID for the navbar element that shows logout button
 const STATUS_ELEMENT_ID = 'headerUserStatus';
 
@@ -56,31 +54,12 @@ document.addEventListener('DOMContentLoaded', (): void => {
     return container;
   }
 
-  // check if there's a user logged in by reading sessionStorage
-  // returns null if nobody's logged in or the data is corrupted
-  function getUserSession(): UserSession | null {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-
-    try {
-      return JSON.parse(raw) as UserSession;
-    } catch {
-      // if JSON.parse fails, the data got messed up somehow
-      return null;
-    }
-  }
-
-  function getUserDisplayName(user: UserSession): string {
-    if (user.fullName) return user.fullName;
-
-    if (user.student_profile) {
-      const { first_name, last_name } = user.student_profile;
-      if (first_name || last_name) {
-        return `${first_name || ''} ${last_name || ''}`.trim();
-      }
-    }
-
-    return user.email ? user.email.split('@')[0] : 'Unknown';
+  function getUserDisplayName(email: string | null, meta?: any): string {
+    // prefer a friendly name from user metadata if provided
+    const full = meta?.full_name || meta?.fullName;
+    if (typeof full === 'string' && full.trim()) return full.trim();
+    if (email) return email.split('@')[0];
+    return 'Unknown';
   }
 
   function showLoggedOutState(): void {
@@ -92,8 +71,8 @@ document.addEventListener('DOMContentLoaded', (): void => {
 
   // when someone's logged in, show their name and a logout button
   // hide the login and signup links since they don't need those anymore
-  function showLoggedInState(user: UserSession): void {
-    const displayName = getUserDisplayName(user);
+  function showLoggedInState(email: string, meta?: any): void {
+    const displayName = getUserDisplayName(email, meta);
     const firstName = displayName.split(' ')[0]; // just show first name in nav to save space
 
     if (links.profile) {
@@ -107,9 +86,9 @@ document.addEventListener('DOMContentLoaded', (): void => {
     renderLogoutButton(statusContainer);
   }
 
-  // create and insert the logout button
+  // Make a logout button and stick it in the navbar
   function renderLogoutButton(container: HTMLElement): void {
-    container.innerHTML = ''; // clear it first
+    container.innerHTML = ''; // Wipe out anything that was there before
     const logoutBtn = document.createElement('button');
     logoutBtn.className = 'btn btn-ghost btn-sm';
     logoutBtn.textContent = 'Logout';
@@ -117,20 +96,26 @@ document.addEventListener('DOMContentLoaded', (): void => {
     container.appendChild(logoutBtn);
   }
 
-  // when they click logout, wipe their session and send them home
-  function handleLogout(): void {
-    sessionStorage.removeItem(STORAGE_KEY);
+  // When they hit logout, end their session and take them back to the homepage
+  async function handleLogout(): Promise<void> {
+    await supabase.auth.signOut();
     location.href = 'index.html';
   }
 
-  // main function that checks login state and updates the navbar
-  function render(): void {
-    const user = getUserSession();
-    user ? showLoggedInState(user) : showLoggedOutState();
+  // Check if someone's logged in and update the navbar to match their status
+  async function render(): Promise<void> {
+    const session = await getSession();
+    if (session && session.user) {
+      const email = session.user.email || '';
+      const meta = session.user.user_metadata || {};
+      showLoggedInState(email, meta);
+    } else {
+      showLoggedOutState();
+    }
   }
 
-  // run it once when page loads
+  // Update the navbar right away when the page loads
   render();
-  // also listen for storage changes (in case they log in/out in another tab)
-  window.addEventListener('storage', render);
+  // Keep watching for login/logout events so the navbar always stays current
+  onAuthStateChange(() => { render(); });
 });

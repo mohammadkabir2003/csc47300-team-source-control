@@ -1,60 +1,48 @@
-import { UserSession, StudentProfile } from './types.js';
+// The user profile page where you can see your account info and log out.
+// Shows your email, name, and whether you're approved to sell stuff.
+import { supabase, getSession } from './supabase-client.js';
 
-// grab the div where we'll display the profile info
+// Find the spot on the page where we'll show their profile details
 const profileDiv = document.getElementById("profileDiv") as HTMLDivElement | null;
 
-// try to load the logged-in user from sessionStorage
-let user: UserSession | null = null;
-try {
-  const raw = sessionStorage.getItem("loggedInUser");
-  if (raw) {
-    user = JSON.parse(raw) as UserSession;
-  }
-} catch (err) {
-  console.warn("Failed to parse loggedInUser from sessionStorage:", err);
-}
-
-// if the profileDiv doesn't exist, bail out (shouldn't happen)
-if (!profileDiv) {
-  console.warn("No #profileDiv on this page");
-} else if (!user) {
-  // nobody's logged in, show a message
-  profileDiv.innerHTML = "<p>No user logged in.</p>";
-} else {
-  // got a user! display their profile
-  const email: string = user.email || "";
-
-  if (user.student_profile) {
-    const s: StudentProfile = user.student_profile || {};
-    const name: string = `${s.first_name || s.firstName || ""} ${s.last_name || s.lastName || ""}`.trim();
-    const major: string = s.major || "—";
-
-    profileDiv.innerHTML = `
-      <h2>Email: ${email}</h2>
-      <h2>Name: ${name || "Unknown"}</h2>
-      <h2>Major: ${major}</h2>
-    `;
-  } else {
-    const name: string = user.fullName || 
-      [user.first_name, user.last_name].filter(Boolean).join(" ") || 
-      "Unknown";
-    const canSell: string = user.isSeller ? "Yes" : "No";
-
-    profileDiv.innerHTML = `
-      <h2>Email: ${email}</h2>
-      <h2>Name: ${name}</h2>
-      <h2>Seller: ${canSell}</h2>
-    `;
+// Load up the user's info and display it nicely on the page
+async function render(): Promise<void> {
+  if (!profileDiv) {
+    console.warn('No #profileDiv on this page');
+    return;
   }
 
-  const logoutBtn = document.createElement("button");
-  logoutBtn.textContent = "Logout";
-  logoutBtn.className = "btn btn-ghost";
-  logoutBtn.style.marginTop = "1rem";
-  logoutBtn.addEventListener("click", (): void => {
-    sessionStorage.removeItem("loggedInUser");
-    window.location.href = "index.html";
+  const session = await getSession();
+  if (!session || !session.user) {
+    profileDiv.innerHTML = '<p>No user logged in.</p>';
+    return;
+  }
+
+  // Pull out the important stuff from their account
+  const email = session.user.email || '';
+  const meta: any = session.user.user_metadata || {};
+  const name: string = (meta.full_name || meta.fullName || '').trim() || (email.split('@')[0]);
+  const canSell: string = meta.is_seller ? 'Yes' : 'No';
+
+  // Show their profile on the page
+  profileDiv.innerHTML = `
+    <h2>Email: ${email}</h2>
+    <h2>Name: ${name}</h2>
+    <h2>Seller: ${canSell}</h2>
+  `;
+
+  // Add a logout button so they can sign out when they're done
+  const logoutBtn = document.createElement('button');
+  logoutBtn.textContent = 'Logout';
+  logoutBtn.className = 'btn btn-ghost';
+  logoutBtn.style.marginTop = '1rem';
+  logoutBtn.addEventListener('click', async (): Promise<void> => {
+    // Sign them out and send them back to the homepage
+    await supabase.auth.signOut();
+    window.location.href = 'index.html';
   });
 
   profileDiv.appendChild(logoutBtn);
 }
+
+render();
