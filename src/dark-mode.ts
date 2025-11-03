@@ -47,10 +47,10 @@ function initDarkModeToggle(): void {
     toggleBtn.classList.add('active');
   }
   
-  // when clicked, toggle dark mode and slide the switch
+  // When they click the switch, flip between light and dark mode
   toggleBtn.addEventListener('click', () => {
     toggleDarkMode();
-    // update the toggle switch position
+    // Move the switch slider to show which mode they picked
     if (isDarkModeEnabled()) {
       toggleBtn.classList.add('active');
     } else {
@@ -58,15 +58,15 @@ function initDarkModeToggle(): void {
     }
   });
 
-  // stick it at the end of the nav
+  // Put the toggle switch at the end of the navbar
   nav.appendChild(toggleBtn);
 }
 
-// run it when the page loads
+// Set everything up as soon as the page finishes loading
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initDarkModeToggle);
 } else {
-  // page already loaded, run it now
+  // If the page already loaded before we got here, just run it now
   initDarkModeToggle();
 }
 
