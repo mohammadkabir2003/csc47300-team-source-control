@@ -1,10 +1,18 @@
 // The login page logic - where students sign in with their CCNY email and password.
 // Everything happens through Supabase so we don't need to manage sessions ourselves.
-import { supabase } from './supabase-client.js';
+import { supabase, isSupabaseConfigured } from './supabase-client.js';
 
 // Find the login form and the spot where we'll show error messages
 const form = document.getElementById("loginForm") as HTMLFormElement;
 const errorMsg = document.getElementById("errorMsg") as HTMLParagraphElement;
+
+// Check if Supabase is set up correctly - if not, show a clear error immediately
+if (!isSupabaseConfigured) {
+  errorMsg.textContent = '⚠️ Database connection error. Please check your configuration and try again later.';
+  errorMsg.style.color = '#dc3545';
+  form.style.opacity = '0.5';
+  form.style.pointerEvents = 'none'; // Disable form interactions
+}
 
 // Listen for when they click the login button and try to sign them in
 form.addEventListener("submit", async (e: Event): Promise<void> => {
@@ -24,6 +32,12 @@ form.addEventListener("submit", async (e: Event): Promise<void> => {
     return;
   }
 
+  // Double-check that Supabase is configured before trying to log in
+  if (!isSupabaseConfigured) {
+    errorMsg.textContent = '⚠️ Database connection error. Login is currently unavailable.';
+    return;
+  }
+
   try {
     // Ask Supabase to check if their email and password match
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -33,9 +47,14 @@ form.addEventListener("submit", async (e: Event): Promise<void> => {
         errorMsg.textContent = 'Invalid email or password';
       } else if (error.message.toLowerCase().includes('email not confirmed')) {
         errorMsg.textContent = 'Please confirm your email, then try again.';
+      } else if (error.message.toLowerCase().includes('fetch') || error.message.toLowerCase().includes('network')) {
+        errorMsg.textContent = '⚠️ Unable to connect to authentication service. Please check your internet connection.';
+      } else if (error.message.toLowerCase().includes('api key')) {
+        errorMsg.textContent = '⚠️ Configuration error. Please contact support.';
       } else {
         errorMsg.textContent = error.message || 'Login failed.';
       }
+      console.error('[login] Supabase error:', error);
       return;
     }
 
@@ -50,6 +69,11 @@ form.addEventListener("submit", async (e: Event): Promise<void> => {
     window.location.href = 'market.html';
   } catch (error) {
     console.error('Login error:', error);
-    errorMsg.textContent = 'An error occurred. Please try again.';
+    // More specific error handling for network failures
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      errorMsg.textContent = '⚠️ Network error. Unable to reach authentication service.';
+    } else {
+      errorMsg.textContent = 'An unexpected error occurred. Please try again later.';
+    }
   }
 });

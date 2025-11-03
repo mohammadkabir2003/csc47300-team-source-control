@@ -1,6 +1,6 @@
 // The sell page where students can list stuff they want to sell.
 // Handles uploading product photos to Supabase storage and creating the listing.
-import { supabase, getSession } from './supabase-client.js';
+import { supabase, getSession, isSupabaseConfigured } from './supabase-client.js';
 
 // Where we store product images - this bucket was created in the Supabase dashboard
 const BUCKET_NAME = 'Product_Images'; // created via Supabase UI (public)
@@ -8,6 +8,14 @@ const BUCKET_NAME = 'Product_Images'; // created via Supabase UI (public)
 const sellForm = document.querySelector('.form') as HTMLFormElement;
 const errorMsg = document.getElementById('sell-error') as HTMLElement;
 const successMsg = document.getElementById('sell-success') as HTMLElement;
+
+// Check if Supabase is available right when the page loads
+if (!isSupabaseConfigured && sellForm) {
+  errorMsg.textContent = '⚠️ Database connection unavailable. You cannot list products at this time. Please contact support.';
+  errorMsg.style.display = 'block';
+  sellForm.style.opacity = '0.5';
+  sellForm.style.pointerEvents = 'none';
+}
 
 // Show little thumbnails of the photos they're about to upload so they know what it'll look like
 const imagesInput = document.getElementById('images') as HTMLInputElement | null;
@@ -77,6 +85,14 @@ async function uploadImages(files: FileList | null, userId: string): Promise<str
   return urls;
 }
 
+// Check if Supabase is configured - if not, disable the form
+if (!isSupabaseConfigured && sellForm && errorMsg) {
+  errorMsg.textContent = '⚠️ Database connection unavailable. Unable to list products at this time.';
+  errorMsg.style.color = '#dc3545';
+  sellForm.style.opacity = '0.5';
+  sellForm.style.pointerEvents = 'none';
+}
+
 if (sellForm) {
   sellForm.addEventListener('submit', async (e: Event): Promise<void> => {
     e.preventDefault();
@@ -84,6 +100,12 @@ if (sellForm) {
     // Wipe out any old error or success messages from previous attempts
     if (errorMsg) errorMsg.textContent = '';
     if (successMsg) successMsg.textContent = '';
+    
+    // Double-check that database is available
+    if (!isSupabaseConfigured) {
+      if (errorMsg) errorMsg.textContent = '⚠️ Database connection unavailable. Cannot list products.';
+      return;
+    }
     
     // Check if user is logged in
     const session = await getSession();
@@ -107,8 +129,14 @@ if (sellForm) {
       try {
         imageUrls = await uploadImages(files, session.user.id);
       } catch (imgErr: any) {
-        console.error('Image upload failed:', imgErr);
-        if (errorMsg) errorMsg.textContent = imgErr.message || 'Image upload failed. Check file size/type and try again.';
+        console.error('[sell] Image upload failed:', imgErr);
+        if (errorMsg) {
+          if (imgErr.message?.includes('fetch') || imgErr.message?.includes('Network')) {
+            errorMsg.textContent = '⚠️ Network error uploading images. Please check your connection.';
+          } else {
+            errorMsg.textContent = imgErr.message || 'Image upload failed. Check file size/type and try again.';
+          }
+        }
         return;
       }
 
@@ -123,7 +151,7 @@ if (sellForm) {
         seller_id: session.user.id,
         is_active: true
       };
-      console.log('Creating product with payload', payload);
+      console.log('[sell] Creating product with payload', payload);
 
       const { error: insertError } = await supabase
         .from('products')
@@ -131,7 +159,7 @@ if (sellForm) {
         .select();
 
       if (insertError) {
-        console.error('Product insert error', insertError);
+        console.error('[sell] Product insert error', insertError);
         throw insertError;
       }
       
@@ -143,9 +171,16 @@ if (sellForm) {
         }, 2000);
       }
     } catch (err: any) {
-      console.error('Error creating product:', err);
+      console.error('[sell] Error creating product:', err);
       if (errorMsg) {
-        errorMsg.textContent = err.message || 'Failed to create listing. Please try again.';
+        // Provide more helpful error messages based on what went wrong
+        if (err.message?.includes('fetch') || err.message?.includes('Network')) {
+          errorMsg.textContent = '⚠️ Network error. Unable to create listing. Please check your connection.';
+        } else if (err.message?.includes('permission') || err.message?.includes('policy')) {
+          errorMsg.textContent = '⚠️ Permission denied. Please make sure you are logged in.';
+        } else {
+          errorMsg.textContent = err.message || 'Failed to create listing. Please try again.';
+        }
       }
     }
   });

@@ -1,20 +1,46 @@
 // The marketplace page - browse all the stuff students are selling at CCNY.
 // Supports searching, filtering by category, and sorting by price or date.
 import { Product, ProductData } from './types.js';
-import { supabase } from './supabase-client.js';
+import { supabase, isSupabaseConfigured } from './supabase-client.js';
 
 // All the products we've loaded get stored here so we can filter/search through them
 let DATA: Product[] = [];
 
+// Helper function to show error messages to the user
+function showErrorBanner(message: string): void {
+  const resultsEl = document.getElementById('results');
+  if (resultsEl) {
+    resultsEl.innerHTML = `
+      <div style="padding: 20px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 5px; margin: 20px;">
+        <strong>⚠️ ${message}</strong>
+      </div>
+    `;
+  }
+}
+
 // Go fetch all the active product listings from the database when the page loads
 (async function (): Promise<void> {
+  // Check if Supabase is configured before trying to fetch
+  if (!isSupabaseConfigured) {
+    console.warn('[market] Supabase not configured, using local fallback data');
+    showErrorBanner('Database connection unavailable. Showing sample products only.');
+    // Skip trying Supabase and go straight to local fallback
+    await loadFallbackData();
+    return;
+  }
+
   try {
     const { data, error } = await supabase
       .from('products')
       .select('*')
       .eq('is_active', true)
       .order('created_at', { ascending: false });
-    if (error) throw error;
+    
+    if (error) {
+      console.error('[market] Supabase error:', error);
+      throw new Error(`Database query failed: ${error.message}`);
+    }
+    
     if (data && Array.isArray(data)) {
       DATA = data.map((p: any) => ({
         id: p.id,
@@ -36,9 +62,16 @@ let DATA: Product[] = [];
       return;
     }
   } catch (e) {
-    console.error('[supabase] products fetch failed, falling back to local data:', e);
+    console.error('[market] Failed to fetch products from database:', e);
+    showErrorBanner('Unable to load products from database. Showing sample products.');
   }
+  
   // If the database is down or not set up, we can still use the local JSON file for development
+  await loadFallbackData();
+})();
+
+// Load products from local JSON file as a fallback
+async function loadFallbackData(): Promise<void> {
   try {
     const res = await fetch('data/products.json');
     if (res.ok) {
@@ -48,12 +81,14 @@ let DATA: Product[] = [];
       readURLParams();
       applyFilters();
     } else {
-      console.error('products.json load failed');
+      console.error('[market] products.json load failed with status:', res.status);
+      showErrorBanner('Unable to load products. Please try again later.');
     }
   } catch (e) {
-    console.error(e);
+    console.error('[market] Failed to load fallback data:', e);
+    showErrorBanner('Unable to load products. Please check your connection.');
   }
-})();
+}
 
 // Find all the form elements we need for searching and filtering products
 const qEl = document.getElementById('q') as HTMLInputElement; // search box

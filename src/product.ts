@@ -31,7 +31,10 @@ async function loadProductById(id: string): Promise<Product | null> {
       .select('*')
       .eq('id', id)
       .maybeSingle();
-    if (error) throw error;
+    if (error) {
+      console.error('[product] Database error loading product:', error);
+      throw error;
+    }
     if (data) {
       // Try to get info about the seller so we can show their name
       let sellerName = 'CCNY Student';
@@ -46,7 +49,7 @@ async function loadProductById(id: string): Promise<Product | null> {
             sellerEmail = user.email || '';
           }
         } catch (e) {
-          console.error('Error fetching seller info:', e);
+          console.error('[product] Error fetching seller info:', e);
         }
       }
       
@@ -75,7 +78,15 @@ async function loadProductById(id: string): Promise<Product | null> {
       };
     }
   } catch (e) {
-    console.error('[supabase] product fetch failed, falling back to local data:', e);
+    console.error('[product] Product fetch failed, falling back to local data:', e);
+    // Show a warning banner to the user
+    const container = document.getElementById('product-detail');
+    if (container) {
+      const warning = document.createElement('div');
+      warning.style.cssText = 'padding: 15px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 5px; margin-bottom: 20px;';
+      warning.innerHTML = '<strong>⚠️ Database connection unavailable.</strong> Product information may be limited.';
+      container.insertBefore(warning, container.firstChild);
+    }
   }
   // If we can't reach the database, check the local backup file instead
   try {
@@ -84,7 +95,7 @@ async function loadProductById(id: string): Promise<Product | null> {
     const j: ProductData = await res.json();
     return (j.products || []).find((p) => p.id === id) || null;
   } catch (e) {
-    console.error(e);
+    console.error('[product] Failed to load fallback data:', e);
     return null;
   }
 }
