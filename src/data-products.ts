@@ -1,3 +1,11 @@
+import { ProductData } from './types.js';
+
+declare global {
+  interface Window {
+    PRODUCT_DATA: ProductData;
+  }
+}
+
 window.PRODUCT_DATA = {
   "meta": {
     "version": "1.0",

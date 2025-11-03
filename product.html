@@ -5,15 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Product — CCNY Exchange</title>
     <link rel="stylesheet" href="styles.css" />
-    <style>
-      .gallery { display: grid; gap: .6rem; }
-      .main-image { border-radius: 12px; overflow: hidden; aspect-ratio: 4/3; background: #fff; display:flex;align-items:center;justify-content:center }
-      .thumb-row { display:flex; gap:.5rem; margin-top:.5rem }
-      .thumb-item { width:56px; height:42px; border-radius:8px; overflow:hidden; background:#fff; display:flex;align-items:center;justify-content:center; cursor:pointer; border:1px solid var(--border) }
-      .tag { display:inline-block; background:rgba(99,102,241,.08); color:var(--ink-2); padding:.25rem .5rem; border-radius:999px; margin-right:.35rem; font-size:.85rem }
-      .qty { width:70px }
-      .cart-badge { background: var(--accent-2); color: white; padding: .15rem .5rem; border-radius:999px; font-size:.85rem; margin-left:.35rem }
-    </style>
+    <link rel="stylesheet" href="product.css" />
   </head>
   <body>
     <a class="skip-to-content" href="#main">Skip to content</a>
@@ -28,7 +20,6 @@
           <a class="nav-link" href="safety.html">Safety</a>
           <a class="nav-link" href="cart.html">Cart <span id="nav-cart-count" class="cart-badge" style="display:none">0</span></a>
           <a class="nav-link" href="login.html">Log In</a>
-          <a class="nav-link" href="user.html">Profile</a>
           <a class="btn btn-primary btn-sm" href="signup.html">Sign Up</a>
         </nav>
       </div>
@@ -95,69 +86,7 @@
       </div>
     </footer>
 
-    <script>
-      function formatPrice(cents, currency) {
-        if (typeof cents !== 'number') return '';
-        try { return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(cents / 100); }
-        catch (e) { return (cents/100).toFixed(2) + ' ' + (currency || 'USD'); }
-      }
-      function getIdFromUrl() { const params = new URLSearchParams(location.search); return params.get('id'); }
-
-      async function loadProducts() {
-        try { const res = await fetch('data/products.json'); if (!res.ok) throw new Error('load'); return await res.json(); }
-        catch (e) { console.error(e); return null; }
-      }
-
-      const CART_KEY = 'ccny_cart_v1';
-      function readCart(){ try { return JSON.parse(localStorage.getItem(CART_KEY)||'{}'); } catch(e){return{}} }
-      function writeCart(cart){ localStorage.setItem(CART_KEY, JSON.stringify(cart)); updateNavCart(); }
-      function addToCart(id, qty){ const cart = readCart(); cart[id] = (cart[id]||0) + qty; writeCart(cart); }
-      function updateNavCart(){ const el = document.getElementById('nav-cart-count'); const cart = readCart(); const count = Object.values(cart).reduce((s,n)=>s+n,0); if (count>0){ el.style.display='inline-block'; el.textContent = count; } else el.style.display='none'; }
-
-      (async function render(){
-        updateNavCart();
-        const data = await loadProducts();
-        const id = getIdFromUrl();
-        const root = document.getElementById('product-root');
-        const notFound = document.getElementById('not-found');
-        if (!data || !Array.isArray(data.products)) { document.getElementById('product-title').textContent='Data unavailable'; return; }
-        if (!id) { document.getElementById('product-title').textContent='No product selected'; document.getElementById('product-sub').innerHTML='Open via <code>?id=&lt;product-id&gt;</code>.'; return; }
-
-        const product = data.products.find(p => p.id === id);
-        if (!product) { root.style.display='none'; notFound.style.display='block'; return; }
-
-        document.getElementById('product-title').textContent = product.title;
-        document.getElementById('product-sub').textContent = (product.category||'') + ' • ' + (product.location||'');
-        document.getElementById('product-price').textContent = formatPrice(product.price_cents, product.currency);
-        document.getElementById('product-desc').textContent = product.description || '';
-        document.getElementById('product-condition').textContent = product.condition || '';
-        document.getElementById('product-location').textContent = product.location || '';
-        document.getElementById('product-seller').textContent = product.seller ? (product.seller.name + (product.seller.verified ? ' ✓' : '')) : '';
-        document.getElementById('product-created').textContent = new Date(product.created_at).toLocaleString();
-        document.getElementById('meta-details').textContent = '';
-
-        const tagRow = document.getElementById('tag-row'); tagRow.innerHTML=''; (product.tags||[]).forEach(t=>{ const s=document.createElement('span'); s.className='tag'; s.textContent=t; tagRow.appendChild(s); });
-
-        const main = document.getElementById('main-image'); const thumbs = document.getElementById('thumbs'); thumbs.innerHTML='';
-        const imgs = product.images && product.images.length ? product.images : [];
-        if (imgs.length){ let idx=0; function show(i){ main.style.backgroundImage = `url(${imgs[i]})`; main.style.backgroundSize='cover'; } imgs.forEach((u,i)=>{ const ti=document.createElement('div'); ti.className='thumb-item'; ti.style.backgroundImage=`url(${u})`; ti.style.backgroundSize='cover'; ti.onclick=()=>show(i); thumbs.appendChild(ti); }); show(0); }
-        else {
-          const initials = product.title.split(' ').slice(0,2).map(s=>s[0]).join('').toUpperCase();
-          const svg = `data:image/svg+xml;utf8,` + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='800' height='600'><rect width='100%' height='100%' fill='%23eef2ff'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='72' fill='%23334155' font-family='Arial, Helvetica, sans-serif'>${initials}</text></svg>`);
-          main.style.backgroundImage = `url(${svg})`;
-          main.style.backgroundSize = 'cover';
-          const ti=document.createElement('div'); ti.className='thumb-item'; ti.style.backgroundImage=`url(${svg})`; ti.style.backgroundSize='cover'; thumbs.appendChild(ti);
-        }
-
-        const msg = document.getElementById('msg-seller'); if (product.seller && product.seller.contact){ const c=product.seller.contact; if (c.address) msg.href='mailto:'+encodeURIComponent(c.address); else if (c.number) msg.href='tel:'+encodeURIComponent(c.number); else msg.href='#'; } else msg.href='#';
-
-        document.getElementById('add-cart').addEventListener('click', ()=>{
-          const qty = Math.max(1, parseInt(document.getElementById('qty').value||1,10));
-          addToCart(product.id, qty);
-          alert(`Added ${qty} × ${product.title} to cart`);
-        });
-      })();
-    </script>
-    <script src="auth-ui.js"></script>
+    <script type="module" src="dist/product.js"></script>
+    <script type="module" src="dist/auth-ui.js"></script>
   </body>
 </html>

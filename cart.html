@@ -5,12 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Cart — CCNY Exchange</title>
     <link rel="stylesheet" href="styles.css" />
-    <style>
-      .cart-grid { display:grid; gap:.8rem }
-      .cart-row { display:flex; gap:.8rem; align-items:center; padding:.6rem; border:1px solid var(--border); border-radius:12px; background:var(--card) }
-      .cart-thumb { width:84px; height:64px; border-radius:8px; background:linear-gradient(135deg, rgba(99,102,241,.12), rgba(14,165,233,.12)); }
-      .muted-small{ color:var(--ink-2); font-size:.95rem }
-    </style>
+    <link rel="stylesheet" href="cart.css" />
   </head>
   <body>
     <a class="skip-to-content" href="#main">Skip to content</a>
@@ -22,9 +17,8 @@
           <a class="nav-link" href="market.html">Browse</a>
           <a class="nav-link" href="sell.html">Sell an Item</a>
           <a class="nav-link" href="safety.html">Safety</a>
-          <a class="nav-link active" href="cart.html">Cart</a>
+          <a class="nav-link active" aria-current="page" href="cart.html">Cart</a>
           <a class="nav-link" href="login.html">Log In</a>
-          <a class="nav-link" href="user.html">Profile</a>
           <a class="btn btn-primary btn-sm" href="signup.html">Sign Up</a>
         </nav>
       </div>
@@ -48,24 +42,7 @@
 
     <footer class="site-footer"><div class="wrap"><p>Prototype only. Meet on campus for exchanges.</p></div></footer>
 
-  <script>
-      const CART_KEY='ccny_cart_v1';
-      function readCart(){ try { return JSON.parse(localStorage.getItem(CART_KEY)||'{}'); } catch(e){return{}} }
-      function writeCart(c){ localStorage.setItem(CART_KEY, JSON.stringify(c)); }
-
-      async function render(){
-        const dataResp = await fetch('data/products.json').then(r=>r.json()).catch(()=>null);
-        const data = dataResp ? dataResp.products : [];
-        const cart = readCart(); const list = document.getElementById('cart-list'); list.innerHTML=''; let subtotal=0; const ids = Object.keys(cart);
-        if (!ids.length){ list.innerHTML='<p>Your cart is empty. Browse listings to add items.</p>'; document.getElementById('subtotal').textContent='$0.00'; return; }
-        ids.forEach(id => { const qty = cart[id]; const p = data.find(x=>x.id===id); if(!p) return; const row = document.createElement('div'); row.className='cart-row'; row.innerHTML = `<div class="cart-thumb" aria-hidden="true"></div><div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:center"><div><strong>${p.title}</strong><div class="muted-small">${p.category} • ${p.location}</div></div><div style="text-align:right"><div style="font-weight:800">${(p.price_cents/100).toLocaleString(undefined,{style:'currency',currency:p.currency})}</div><div class="muted-small">x <input data-id="${id}" class="input qty" type="number" min="1" value="${qty}" style="width:64px" /></div><div style="margin-top:.4rem"><a href="#" data-remove="${id}" class="btn btn-ghost">Remove</a></div></div></div></div>`; list.appendChild(row); subtotal += p.price_cents * qty; });
-        document.getElementById('subtotal').textContent = new Intl.NumberFormat(undefined,{style:'currency',currency:'USD'}).format(subtotal/100);
-
-        list.querySelectorAll('input[data-id]').forEach(inp=>{ inp.addEventListener('change', (e)=>{ const id=e.target.dataset.id; const v=Math.max(1,parseInt(e.target.value||1,10)); const c=readCart(); c[id]=v; writeCart(c); render(); }); });
-        list.querySelectorAll('[data-remove]').forEach(a=>{ a.addEventListener('click', e=>{ e.preventDefault(); const id=a.dataset.remove; const c=readCart(); delete c[id]; writeCart(c); render(); }); });
-      }
-      render();
-    </script>
-    <script src="auth-ui.js"></script>
+    <script type="module" src="dist/cart.js"></script>
+    <script type="module" src="dist/auth-ui.js"></script>
   </body>
 </html>

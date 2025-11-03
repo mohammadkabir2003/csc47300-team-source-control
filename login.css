@@ -1,0 +1,65 @@
+.login-section {
+  max-width: 400px;
+  margin: 3rem auto;
+  padding: 2rem;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.login-section h1 {
+  text-align: center;
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  color: #12355b;
+}
+
+.form-group {
+  margin-bottom: 1.2rem;
+}
+
+.form-group label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.4rem;
+  color: #333;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="email"] {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+input:focus {
+  border-color: #0057b7;
+  outline: none;
+}
+
+.login-button {
+  width: 100%;
+  padding: 0.9rem;
+  background-color: #0057b7;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.login-button:hover {
+  background-color: #004094;
+}
+
+.error-message {
+  margin-top: 1rem;
+  color: #c0392b;
+  text-align: center;
+  font-weight: 500;
+}
