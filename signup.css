@@ -1,0 +1,39 @@
+.signup-section {
+  max-width: 720px;
+  margin: 3rem auto;
+  padding: 1.25rem;
+}
+
+.small-note {
+  font-size: .95rem;
+  color: var(--ink-2);
+  margin-top: .35rem;
+}
+
+.msg {
+  text-align: center;
+  margin-top: .75rem;
+  font-weight: 600;
+}
+
+.msg.success {
+  color: #0f5132;
+  background: rgba(16, 185, 129, 0.08);
+  padding: .6rem;
+  border-radius: 8px;
+}
+
+.msg.error {
+  color: #7f1d1d;
+  background: rgba(239, 68, 68, 0.06);
+  padding: .6rem;
+  border-radius: 8px;
+}
+
+.inline-helpers {
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+  justify-content: center;
+  margin-top: .6rem;
+}

@@ -17,9 +17,8 @@
         <a class="nav-link" href="market.html">Browse</a>
         <a class="nav-link active" aria-current="page" href="sell.html">Sell an Item</a>
         <a class="nav-link" href="safety.html">Safety</a>
-        <a class="nav-link" href="login.html">Log In</a>
-        <a class="nav-link" href="user.html">Profile</a>
         <a class="nav-link" href="cart.html">Cart</a>
+        <a class="nav-link" href="login.html">Log In</a>
         <a class="btn btn-primary btn-sm" href="signup.html">Sign Up</a>
       </nav>
     </div>
@@ -31,7 +30,7 @@
       <p class="muted">No backend yet — this is a front-end demo form.</p>
     </header>
 
-    <form class="form" action="#" method="post" onsubmit="alert('Demo only — no backend connected.'); return false;">
+    <form class="form" action="#" method="post">
       <div class="field">
         <label for="title">Title<span class="req">*</span></label>
         <input class="input" id="title" name="title" type="text" required placeholder="e.g., Calculus I (Stewart) 8th Ed." />
@@ -86,6 +85,7 @@
       <p>By posting, you agree to our <a href="safety.html">Safety & Policies</a>.</p>
     </div>
   </footer>
-  <script src="auth-ui.js"></script>
+  <script type="module" src="dist/sell.js"></script>
+  <script type="module" src="dist/auth-ui.js"></script>
 </body>
 </html>
