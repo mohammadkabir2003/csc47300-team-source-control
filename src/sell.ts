@@ -26,6 +26,27 @@ if (imagesInput && previews) {
     previews.innerHTML = '';
     const files = imagesInput.files;
     if (!files || !files.length) return;
+    
+    // Validate file types immediately
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (!allowedTypes.includes(file.type.toLowerCase())) {
+        if (errorMsg) {
+          errorMsg.textContent = `❌ Invalid file type: "${file.name}". Only image files (JPEG, PNG, GIF, WebP) are allowed.`;
+          errorMsg.style.display = 'block';
+        }
+        imagesInput.value = ''; // Clear the invalid selection
+        return;
+      }
+    }
+    
+    // Clear any previous error messages
+    if (errorMsg) {
+      errorMsg.textContent = '';
+      errorMsg.style.display = 'none';
+    }
+    
     const max = Math.min(files.length, 5);
     for (let i = 0; i < max; i++) {
       const f = files[i];
@@ -116,12 +137,75 @@ if (sellForm) {
     
     // Get form data
     const formData = new FormData(sellForm);
-    const title = formData.get('title') as string;
-    const category = formData.get('category') as string;
-    const price = parseFloat(formData.get('price') as string);
-    const location = formData.get('location') as string;
-    const description = formData.get('desc') as string;
+    const title = (formData.get('title') as string || '').trim();
+    const category = (formData.get('category') as string || '').trim();
+    const priceStr = (formData.get('price') as string || '').trim();
+    const price = parseFloat(priceStr);
+    const location = (formData.get('location') as string || '').trim();
+    const description = (formData.get('desc') as string || '').trim();
     const files = (document.getElementById('images') as HTMLInputElement | null)?.files || null;
+    
+    // ===== Detailed Frontend Validation =====
+    
+    // Error 1: Title is missing
+    if (!title) {
+      if (errorMsg) errorMsg.textContent = '❌ Please enter a product title.';
+      return;
+    }
+    
+    // Error 2: Title is too short
+    if (title.length < 3) {
+      if (errorMsg) errorMsg.textContent = '❌ Product title must be at least 3 characters long.';
+      return;
+    }
+    
+    // Error 3: Category is missing
+    if (!category) {
+      if (errorMsg) errorMsg.textContent = '❌ Please select a category.';
+      return;
+    }
+    
+    // Error 4: Price is missing or invalid
+    if (!priceStr || isNaN(price)) {
+      if (errorMsg) errorMsg.textContent = '❌ Please enter a valid price.';
+      return;
+    }
+    
+    // Error 5: Price is negative or zero
+    if (price <= 0) {
+      if (errorMsg) errorMsg.textContent = '❌ Price must be greater than $0.';
+      return;
+    }
+    
+    // Error 6: Location is missing
+    if (!location) {
+      if (errorMsg) errorMsg.textContent = '❌ Please enter a pickup location.';
+      return;
+    }
+    
+    // Error 7: Description is missing
+    if (!description) {
+      if (errorMsg) errorMsg.textContent = '❌ Please enter a product description.';
+      return;
+    }
+    
+    // Error 8: Description is too short
+    if (description.length < 10) {
+      if (errorMsg) errorMsg.textContent = '❌ Description must be at least 10 characters long.';
+      return;
+    }
+    
+    // Error 9: Image file type validation
+    if (files && files.length > 0) {
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (!allowedTypes.includes(file.type.toLowerCase())) {
+          if (errorMsg) errorMsg.textContent = `❌ Invalid file type: "${file.name}". Only image files (JPEG, PNG, GIF, WebP) are allowed.`;
+          return;
+        }
+      }
+    }
     
     try {
       // Upload images first (if any)

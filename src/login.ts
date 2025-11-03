@@ -26,13 +26,33 @@ form.addEventListener("submit", async (e: Event): Promise<void> => {
   const email: string = (emailInput.value || "").trim().toLowerCase();
   const password: string = passwordInput.value || "";
 
-  // basic validation - make sure they filled out both fields
-  if (!email || !password) {
-    errorMsg.textContent = "Please enter email and password.";
+  // ===== Frontend Validation Errors (No DB needed) =====
+  
+  // Error 1: Both fields empty
+  if (!email && !password) {
+    errorMsg.textContent = "❌ Please enter both email and password.";
     return;
   }
-
-  // Double-check that Supabase is configured before trying to log in
+  
+  // Error 2: Email field is empty
+  if (!email) {
+    errorMsg.textContent = "❌ Please enter your email address.";
+    return;
+  }
+  
+  // Error 3: Password field is empty
+  if (!password) {
+    errorMsg.textContent = "❌ Please enter your password.";
+    return;
+  }
+  
+  // Error 4: Password is too short (less than 6 characters)
+  if (password.length < 6) {
+    errorMsg.textContent = "❌ Password must be at least 6 characters long.";
+    return;
+  }
+  
+  // Error 5: Database connection not configured
   if (!isSupabaseConfigured) {
     errorMsg.textContent = '⚠️ Database connection error. Login is currently unavailable.';
     return;
@@ -42,26 +62,39 @@ form.addEventListener("submit", async (e: Event): Promise<void> => {
     // Ask Supabase to check if their email and password match
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      // Show a friendly error message instead of the raw technical ones
-      if (error.message.toLowerCase().includes('invalid login')) {
-        errorMsg.textContent = 'Invalid email or password';
+      console.error('[login] Supabase error:', error);
+      
+      // Show a friendly error message based on the specific error
+      // Error 9: Invalid credentials (wrong email or password from Supabase)
+      if (error.message.toLowerCase().includes('invalid login') || error.message.toLowerCase().includes('invalid credentials')) {
+        errorMsg.textContent = '❌ Invalid email or password. Please check your credentials and try again.';
+      // Error 10: Email not confirmed
       } else if (error.message.toLowerCase().includes('email not confirmed')) {
-        errorMsg.textContent = 'Please confirm your email, then try again.';
+        errorMsg.textContent = '⚠️ Please confirm your email before logging in. Check your inbox for the confirmation link.';
+      // Error 11: User not found in auth system
+      } else if (error.message.toLowerCase().includes('user not found') || error.message.toLowerCase().includes('no user')) {
+        errorMsg.textContent = '❌ No account found with this email address. Please sign up first.';
+      // Error 12: Network/connection error
       } else if (error.message.toLowerCase().includes('fetch') || error.message.toLowerCase().includes('network')) {
         errorMsg.textContent = '⚠️ Unable to connect to authentication service. Please check your internet connection.';
-      } else if (error.message.toLowerCase().includes('api key')) {
+      // Error 13: API configuration error
+      } else if (error.message.toLowerCase().includes('api key') || error.message.toLowerCase().includes('anon key')) {
         errorMsg.textContent = '⚠️ Configuration error. Please contact support.';
+      // Error 14: Connection timeout
+      } else if (error.message.toLowerCase().includes('timeout')) {
+        errorMsg.textContent = '⚠️ Connection timeout. Please try again.';
+      // Error 15: Generic/unknown error
       } else {
-        errorMsg.textContent = error.message || 'Login failed.';
+        errorMsg.textContent = error.message || '❌ Login failed. Please try again.';
       }
-      console.error('[login] Supabase error:', error);
       return;
     }
 
     // They're in! Supabase automatically creates a session and stores it for us
     const session = data.session;
+    // Error 16: No session returned (rare edge case)
     if (!session) {
-      errorMsg.textContent = 'Login succeeded but no session returned. Try again.';
+      errorMsg.textContent = '⚠️ Login succeeded but no session was created. Please try again.';
       return;
     }
 
@@ -69,11 +102,12 @@ form.addEventListener("submit", async (e: Event): Promise<void> => {
     window.location.href = 'market.html';
   } catch (error) {
     console.error('Login error:', error);
-    // More specific error handling for network failures
+    // Error 17: Network fetch failure in catch block
     if (error instanceof TypeError && error.message.includes('fetch')) {
       errorMsg.textContent = '⚠️ Network error. Unable to reach authentication service.';
+    // Error 18: Unexpected/unknown error in catch block
     } else {
-      errorMsg.textContent = 'An unexpected error occurred. Please try again later.';
+      errorMsg.textContent = '⚠️ An unexpected error occurred. Please try again later.';
     }
   }
 });

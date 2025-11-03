@@ -31,16 +31,16 @@
       <p class="muted">List an item for sale on the CCNY Exchange marketplace.</p>
     </header>
 
-    <form class="form" action="#" method="post">
+    <form class="form" action="#" method="post" novalidate>
       <div class="field">
         <label for="title">Title<span class="req">*</span></label>
-        <input class="input" id="title" name="title" type="text" required placeholder="e.g., Calculus I (Stewart) 8th Ed." />
+        <input class="input" id="title" name="title" type="text" placeholder="e.g., Calculus I (Stewart) 8th Ed." />
       </div>
 
       <div class="field two-col">
         <div>
           <label for="category">Category<span class="req">*</span></label>
-          <select class="input" id="category" name="category" required>
+          <select class="input" id="category" name="category">
             <option value="">Select…</option>
             <option>Textbooks</option>
             <option>Electronics</option>
@@ -51,23 +51,23 @@
         </div>
         <div>
           <label for="price">Price ($)<span class="req">*</span></label>
-          <input class="input" id="price" name="price" type="number" inputmode="decimal" min="0" step="0.01" required placeholder="35" />
+          <input class="input" id="price" name="price" type="number" inputmode="decimal" min="0" step="0.01" placeholder="35" />
         </div>
       </div>
 
       <div class="field">
         <label for="location">Meet-up Location<span class="req">*</span></label>
-        <input class="input" id="location" name="location" type="text" required placeholder="e.g., NAC Lobby, Student Center, Towers Lobby" />
+        <input class="input" id="location" name="location" type="text" placeholder="e.g., NAC Lobby, Student Center, Towers Lobby" />
       </div>
 
       <div class="field">
         <label for="desc">Description<span class="req">*</span></label>
-        <textarea class="input" id="desc" name="desc" rows="5" required placeholder="Condition, what’s included, preferred times to meet…"></textarea>
+        <textarea class="input" id="desc" name="desc" rows="5" placeholder="Condition, what's included, preferred times to meet…"></textarea>
       </div>
 
       <div class="field">
         <label for="images">Photos (up to 5)</label>
-        <input class="input" id="images" name="images" type="file" accept="image/*" multiple />
+        <input class="input" id="images" name="images" type="file" multiple />
         <p class="help">JPEG/PNG recommended. Max ~5MB each. First image becomes the cover.</p>
         <div id="image-previews" style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem"></div>
       </div>

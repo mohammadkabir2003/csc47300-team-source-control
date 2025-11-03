@@ -45,17 +45,26 @@ document.addEventListener("DOMContentLoaded", (): void => {
       showMessage("Please enter your full name.");
       return;
     }
+    // Check that full name has at least 2 words (first and last name)
+    const nameParts = fullName.split(/\s+/).filter(part => part.length > 0);
+    if (nameParts.length < 2) {
+      showMessage("Please enter your first and last name.");
+      return;
+    }
     if (!email || !validateEmail(email)) {
       showMessage("Please enter a valid email address.");
       return;
     }
-    // Only CCNY students can sign up - gotta have that @ccny.cuny.edu email
-    if (!email.endsWith('@ccny.cuny.edu')) {
-      showMessage("Please use your @ccny.cuny.edu email address.");
+    if (!password) {
+      showMessage("Please enter a password.");
       return;
     }
-    if (!password || password.length < 6) {
+    if (password.length < 6) {
       showMessage("Password must be at least 6 characters.");
+      return;
+    }
+    if (!confirm) {
+      showMessage("Please confirm your password.");
       return;
     }
     if (password !== confirm) {
