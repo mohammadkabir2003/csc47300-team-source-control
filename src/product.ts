@@ -49,6 +49,8 @@ function addToCart(id: string, qty: number): void {
   writeCart(cart);
 }
 
+// update the cart count badge in the navbar
+// also adds a little bounce animation when the count changes
 function updateNavCart(): void {
   const el = document.getElementById('nav-cart-count');
   if (!el) return;
@@ -57,6 +59,12 @@ function updateNavCart(): void {
   if (count > 0) {
     el.style.display = 'inline-block';
     el.textContent = String(count);
+    
+    // add bounce animation when cart updates
+    el.classList.remove('animate');
+    // force reflow so animation plays again even if count stays the same
+    void el.offsetWidth;
+    el.classList.add('animate');
   } else {
     el.style.display = 'none';
   }
