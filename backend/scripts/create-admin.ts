@@ -25,12 +25,12 @@ async function createAdmin() {
       console.log('Email:', existingAdmin.email)
       console.log('Role:', existingAdmin.role)
       
-      if (existingAdmin.role !== 'admin') {
-        console.log('🔄 Updating user to admin role...')
-        existingAdmin.role = 'admin'
+      if (existingAdmin.role !== 'admin2') {
+        console.log('🔄 Updating user to admin2 role...')
+        existingAdmin.role = 'admin2'
         existingAdmin.isEmailVerified = true
         await existingAdmin.save()
-        console.log('✅ User updated to admin!')
+        console.log('✅ User updated to admin2!')
       }
       
       await mongoose.disconnect()
@@ -44,7 +44,7 @@ async function createAdmin() {
       password: 'Admin123!',
       firstName: 'Admin',
       lastName: 'User',
-      role: 'admin',
+      role: 'admin2',
       isEmailVerified: true,
     })
     

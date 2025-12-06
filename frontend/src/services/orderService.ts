@@ -26,14 +26,14 @@ class OrderService {
     items: Array<{ productId: string; quantity: number }>,
     billingAddress: any,
     paymentMethod: string,
-    cardLastFour: string
+    cardDetails: any
   ): Promise<DBOrder> {
     const response = await axios.post(`${API_URL}/orders`, { 
       items,
       shippingAddress: billingAddress, // Using billing as shipping for pickup
       billingAddress,
       paymentMethod,
-      cardLastFour
+      cardDetails
     })
     return response.data.order
   }
