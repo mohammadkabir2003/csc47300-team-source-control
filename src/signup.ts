@@ -173,10 +173,15 @@ document.addEventListener("DOMContentLoaded", (): void => {
       }
 
       // Account created! Now they need to check their email to confirm before they can log in
-      showMessage('Check your email to confirm your account. Once confirmed, come back and log in.', 'success');
+      showMessage('Account created! Redirecting to login page...', 'success');
 
       // Clear out the form so they can't accidentally submit it again
       form.reset();
+      
+      // Redirect to login page after 2 seconds
+      setTimeout(() => {
+        window.location.href = 'login.html';
+      }, 2000);
     } catch (err) {
       console.error('Sign up error:', err);
       // More specific error handling for network failures
