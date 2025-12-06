@@ -1,15 +1,25 @@
 {
+  "name": "ccny-exchange",
+  "version": "1.0.0",
+  "description": "CCNY Student Marketplace - React Frontend + Node/Express Backend",
   "scripts": {
-    "build": "node generate-env.js && tsc",
-    "watch": "tsc --watch",
-    "clean": "rm -rf dist",
-    "dev": "node generate-env.js && http-server -p 8080 -c-1"
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install && cd ..",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "start": "cd backend && npm start"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0"
   },
   "devDependencies": {
-    "typescript": "^5.3.0",
-    "http-server": "^14.1.1"
-  }
+    "concurrently": "^8.2.2",
+    "typescript": "^5.3.0"
+  },
+  "keywords": ["ccny", "marketplace", "react", "express", "typescript"],
+  "author": "Source Control Team",
+  "license": "MIT"
 }
