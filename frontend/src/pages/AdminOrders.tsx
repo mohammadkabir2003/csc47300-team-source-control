@@ -63,17 +63,12 @@ export default function AdminOrders() {
     try {
       setLoadingPayment(true)
       const response = await adminService.getPayments({ orderId })
-      console.log('Full API response:', JSON.stringify(response, null, 2))
       if (response.data.payments && response.data.payments.length > 0) {
-        console.log('Payment object:', JSON.stringify(response.data.payments[0], null, 2))
-        console.log('cardDetails:', response.data.payments[0].cardDetails)
         setOrderPayment(response.data.payments[0])
       } else {
-        console.log('No payments found for orderId:', orderId)
         setOrderPayment(null)
       }
     } catch (error) {
-      console.error('Error loading payment:', error)
       setOrderPayment(null)
     } finally {
       setLoadingPayment(false)
@@ -725,8 +720,12 @@ export default function AdminOrders() {
                   <input 
                     type="text" 
                     className="input" 
+                    maxLength={5}
                     value={billingAddress.zipCode}
-                    onChange={(e) => setBillingAddress({ ...billingAddress, zipCode: e.target.value })}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '')
+                      setBillingAddress({ ...billingAddress, zipCode: value })
+                    }}
                   />
                 </div>
                 <div>
