@@ -1216,8 +1216,6 @@ adminRouter.get('/payments', async (req, res, next) => {
       .limit(Number(limit))
       .lean()
 
-    console.log('Payment query result:', JSON.stringify(payments[0], null, 2))
-
     const total = await Payment.countDocuments(query)
 
     res.json({
