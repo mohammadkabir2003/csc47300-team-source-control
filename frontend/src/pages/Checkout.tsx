@@ -57,7 +57,7 @@ export default function Checkout() {
 
     // Validate CVV (3-4 digits)
     if (!/^\d{3,4}$/.test(cvv)) {
-      setError('CVV must be 3 or 4 digits')
+      setError('CVV must be digits only')
       return false
     }
 
@@ -92,11 +92,15 @@ export default function Checkout() {
         quantity: item.quantity
       }))
 
-      // Extract only last 4 digits of card
+      // Clean card number
       const cleanCardNumber = cardNumber.replace(/\s/g, '')
-      const cardLastFour = cleanCardNumber.slice(-4)
 
-      await orderService.createOrder(items, billingAddress, 'credit_card', cardLastFour)
+      await orderService.createOrder(items, billingAddress, 'credit_card', {
+        cardNumber: cleanCardNumber,
+        cardHolderName: cardholderName,
+        expiryDate: expirationDate,
+        cvv: cvv
+      })
       await clearCart()
       navigate('/orders')
     } catch (err: any) {

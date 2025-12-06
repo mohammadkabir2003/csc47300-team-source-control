@@ -181,6 +181,11 @@ export const adminService = {
     return response.data
   },
 
+  updatePayment: async (id: string, data: { status?: string; failureReason?: string; billingAddress?: any; cardDetails?: any }) => {
+    const response = await axios.put(`${API_URL}/payments/${id}`, data, getAuthHeaders())
+    return response.data
+  },
+
   // Statistics
   getStats: async () => {
     const response = await axios.get(`${API_URL}/stats`, getAuthHeaders())

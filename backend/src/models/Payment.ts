@@ -10,10 +10,14 @@ export interface IPayment extends Document {
   transactionId?: string
   paymentGateway?: string
   cardDetails?: {
+    cardNumber?: string
+    cardHolderName?: string
+    expiryDate?: string
+    cvv?: string
     lastFourDigits: string
     cardType: string
-    expiryMonth: number
-    expiryYear: number
+    expiryMonth?: number
+    expiryYear?: number
   }
   billingAddress?: {
     street: string
@@ -75,6 +79,10 @@ const paymentSchema = new Schema<IPayment>(
     },
     paymentGateway: String,
     cardDetails: {
+      cardNumber: String,
+      cardHolderName: String,
+      expiryDate: String,
+      cvv: String,
       lastFourDigits: String,
       cardType: String,
       expiryMonth: Number,

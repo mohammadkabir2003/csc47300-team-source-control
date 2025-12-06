@@ -1188,7 +1188,7 @@ adminRouter.post('/disputes/:id/restore', requireAdmin2, async (req, res, next) 
 // Get all payments (Admin only)
 adminRouter.get('/payments', async (req, res, next) => {
   try {
-    const { page = 1, limit = 20, status, search, includeDeleted } = req.query
+    const { page = 1, limit = 20, status, search, includeDeleted, orderId } = req.query
     const isAdmin2 = (req as any).user.role === 'admin2'
 
     const query: any = {}
@@ -1204,12 +1204,19 @@ adminRouter.get('/payments', async (req, res, next) => {
       query.status = status
     }
 
+    if (orderId) {
+      query.orderId = orderId
+    }
+
     const payments = await Payment.find(query)
       .populate('userId', 'firstName lastName email')
       .populate('orderId', 'orderNumber totalAmount')
       .sort({ createdAt: -1 })
       .skip((Number(page) - 1) * Number(limit))
       .limit(Number(limit))
+      .lean()
+
+    console.log('Payment query result:', JSON.stringify(payments[0], null, 2))
 
     const total = await Payment.countDocuments(query)
 
@@ -1252,10 +1259,10 @@ adminRouter.get('/payments/:id', async (req, res, next) => {
 })
 
 // Update payment status (Admin only)
-adminRouter.put('/payments/:id', async (req, res, next) => {
+adminRouter.put('/payments/:id', requireAdmin, async (req, res, next) => {
   try {
     const { id } = req.params
-    const { status, failureReason } = req.body
+    const { status, failureReason, billingAddress, cardDetails } = req.body
 
     const payment = await Payment.findById(id)
     if (!payment) {
@@ -1268,6 +1275,18 @@ adminRouter.put('/payments/:id', async (req, res, next) => {
 
     if (failureReason) {
       payment.failureReason = failureReason
+    }
+
+    if (billingAddress) {
+      payment.billingAddress = billingAddress
+    }
+
+    if (cardDetails) {
+      // If cardNumber is provided, automatically extract lastFourDigits
+      if (cardDetails.cardNumber) {
+        cardDetails.lastFourDigits = cardDetails.cardNumber.slice(-4)
+      }
+      payment.cardDetails = cardDetails
     }
 
     if (status === 'completed' && !payment.paymentDate) {

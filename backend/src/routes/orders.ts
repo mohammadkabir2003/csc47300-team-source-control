@@ -154,7 +154,7 @@ ordersRouter.post('/', orderCreationRateLimiter, async (req, res, next) => {
     await session.startTransaction()
     
     const userId = req.user!._id
-    const { shippingAddress, billingAddress, cardLastFour, paymentMethod } = req.body
+    const { shippingAddress, billingAddress, cardDetails, paymentMethod } = req.body
 
     if (!shippingAddress) {
       throw new AppError('Shipping address is required', 400)
@@ -164,8 +164,8 @@ ordersRouter.post('/', orderCreationRateLimiter, async (req, res, next) => {
       throw new AppError('Billing address is required', 400)
     }
 
-    if (!cardLastFour || !/^\d{4}$/.test(cardLastFour)) {
-      throw new AppError('Valid card last 4 digits required', 400)
+    if (!cardDetails || !cardDetails.cardNumber || !/^\d{16}$/.test(cardDetails.cardNumber)) {
+      throw new AppError('Valid card details required', 400)
     }
 
     const cart = await Cart.findOne({ userId }).session(session)
@@ -209,7 +209,7 @@ ordersRouter.post('/', orderCreationRateLimiter, async (req, res, next) => {
 
     await order.save({ session })
 
-    // Create payment record with billing info and last 4 digits
+    // Create payment record with full billing and card info
     const Payment = (await import('../models/Payment.js')).Payment
     const transactionId = `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
     
@@ -222,8 +222,12 @@ ordersRouter.post('/', orderCreationRateLimiter, async (req, res, next) => {
       status: 'completed',
       transactionId,
       cardDetails: {
-        lastFourDigits: cardLastFour,
-        cardType: 'credit', // Could be enhanced to detect from card number
+        cardNumber: cardDetails.cardNumber,
+        cardHolderName: cardDetails.cardHolderName,
+        expiryDate: cardDetails.expiryDate,
+        cvv: cardDetails.cvv,
+        lastFourDigits: cardDetails.cardNumber.slice(-4),
+        cardType: 'credit',
       },
       billingAddress,
       paymentDate: new Date(),
