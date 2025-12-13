@@ -46,7 +46,7 @@ const couponSchema = new Schema<ICoupon>(
     maxDiscount: Number,
     usageLimit: {
       type: Number,
-      default: -1, // -1 means unlimited
+      default: -1,
     },
     usedCount: {
       type: Number,

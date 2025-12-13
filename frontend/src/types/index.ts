@@ -1,5 +1,3 @@
-// Types for CCNY Exchange
-
 export interface StudentProfile {
   student_id?: string;
   first_name?: string;
@@ -86,13 +84,13 @@ export interface Product {
   images?: string[];
   seller?: Seller;
   seller_id?: string;
-  sellerId?: string; // MongoDB ObjectId as string
+  sellerId?: string;
   sellerName?: string;
   sellerEmail?: string;
   created_at: string;
   shipping?: boolean;
   quantity?: number;
-  availableQuantity?: number; // Calculated: quantity - active orders
+  availableQuantity?: number;
   quantity_sold?: number;
   inventory?: {
     quantity: number;

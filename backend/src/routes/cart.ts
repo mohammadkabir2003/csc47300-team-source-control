@@ -7,10 +7,8 @@ import { getAvailableQuantity } from '../utils/inventory.js'
 
 export const cartRouter = express.Router()
 
-// All cart routes require authentication
 cartRouter.use(authMiddleware)
 
-// Get user's cart
 cartRouter.get('/', async (req, res, next) => {
   try {
     const userId = req.user!._id
@@ -26,7 +24,6 @@ cartRouter.get('/', async (req, res, next) => {
       await cart.save()
     }
 
-    // Filter out items where product was deleted (null after populate)
     if (cart.items) {
       cart.items = cart.items.filter(item => item.productId != null)
     }
@@ -40,7 +37,6 @@ cartRouter.get('/', async (req, res, next) => {
   }
 })
 
-// Add item to cart
 cartRouter.post('/items', async (req, res, next) => {
   try {
     const { productId, quantity = 1 } = req.body
@@ -59,19 +55,16 @@ cartRouter.post('/items', async (req, res, next) => {
     if (product.status !== 'available') {
       throw new AppError('Product is not available', 400)
     }
-    
-    // Check if seller is banned or deleted
+
     const seller = product.sellerId as any
     if (seller?.isBanned || seller?.isDeleted) {
       throw new AppError('This product is no longer available (seller account issues)', 400)
     }
 
-    // Prevent user from adding their own product to cart
     if ((typeof product.sellerId === 'object' ? seller._id : product.sellerId).toString() === userId.toString()) {
       throw new AppError('You cannot purchase your own product', 400)
     }
 
-    // Check available quantity using dynamic calculation
     const available = await getAvailableQuantity(productId, product.quantity)
     if (available < quantity) {
       throw new AppError(`Only ${available} available`, 400)
@@ -83,20 +76,18 @@ cartRouter.post('/items', async (req, res, next) => {
       cart = new Cart({ userId, items: [] })
     }
 
-    // Check if item already exists
     const existingItemIndex = cart.items.findIndex(
       (item) => item.productId.toString() === productId
     )
 
     if (existingItemIndex > -1) {
-      // Revalidate total quantity after adding
       const newQuantity = cart.items[existingItemIndex].quantity + quantity
       const available = await getAvailableQuantity(productId, product.quantity)
       if (available < newQuantity) {
         throw new AppError(`Cannot add ${quantity} more. Only ${available - cart.items[existingItemIndex].quantity} additional available`, 400)
       }
       cart.items[existingItemIndex].quantity = newQuantity
-      cart.items[existingItemIndex].price = product.price // Update price in case it changed
+      cart.items[existingItemIndex].price = product.price
     } else {
       cart.items.push({
         productId: product._id,
@@ -107,7 +98,6 @@ cartRouter.post('/items', async (req, res, next) => {
       })
     }
 
-    // Recalculate total amount server-side to prevent manipulation
     const calculatedTotal = cart.items.reduce((sum, item) => {
       return sum + (parseFloat(item.price) * item.quantity)
     }, 0)
@@ -125,7 +115,6 @@ cartRouter.post('/items', async (req, res, next) => {
   }
 })
 
-// Update cart item quantity
 cartRouter.put('/items/:productId', async (req, res, next) => {
   try {
     const { productId } = req.params
@@ -156,16 +145,14 @@ cartRouter.put('/items/:productId', async (req, res, next) => {
       throw new AppError('Product no longer available', 404)
     }
 
-    // Check available quantity using dynamic calculation
     const available = await getAvailableQuantity(productId, product.quantity)
     if (available < quantity) {
       throw new AppError(`Only ${available} available`, 400)
     }
 
     cart.items[itemIndex].quantity = quantity
-    cart.items[itemIndex].price = product.price // Update price in case it changed
+    cart.items[itemIndex].price = product.price
     
-    // Recalculate total amount server-side to prevent manipulation
     const calculatedTotal = cart.items.reduce((sum, item) => {
       return sum + (parseFloat(item.price) * item.quantity)
     }, 0)
@@ -183,7 +170,6 @@ cartRouter.put('/items/:productId', async (req, res, next) => {
   }
 })
 
-// Remove item from cart
 cartRouter.delete('/items/:productId', async (req, res, next) => {
   try {
     const { productId } = req.params
@@ -208,7 +194,6 @@ cartRouter.delete('/items/:productId', async (req, res, next) => {
   }
 })
 
-// Clear cart
 cartRouter.delete('/', async (req, res, next) => {
   try {
     const userId = req.user!._id

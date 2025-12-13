@@ -116,7 +116,6 @@ const paymentSchema = new Schema<IPayment>(
   }
 )
 
-// Generate transaction ID before saving
 paymentSchema.pre('save', function () {
   if (!this.transactionId && this.status === 'completed') {
     this.transactionId = `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`

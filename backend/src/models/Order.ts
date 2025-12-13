@@ -114,7 +114,6 @@ const orderSchema = new Schema<IOrder>(
   }
 )
 
-// Generate order number before saving
 orderSchema.pre('save', async function () {
   if (!this.orderNumber) {
     this.orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`

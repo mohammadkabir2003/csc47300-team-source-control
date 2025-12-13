@@ -6,15 +6,12 @@ import { AppError } from '../middleware/errorHandler.js'
 import { authMiddleware, AuthRequest } from '../middleware/auth.js'
 
 export const uploadsRouter = express.Router()
-
-// Configure multer for memory storage
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 5 * 1024 * 1024,
   },
   fileFilter: (req, file, cb) => {
-    // Allow only images
     if (file.mimetype.startsWith('image/')) {
       cb(null, true)
     } else {
@@ -22,8 +19,6 @@ const upload = multer({
     }
   },
 })
-
-// Upload single image (requires authentication)
 uploadsRouter.post('/image', authMiddleware, upload.single('image'), async (req, res, next) => {
   try {
     if (!req.file) {
@@ -32,13 +27,10 @@ uploadsRouter.post('/image', authMiddleware, upload.single('image'), async (req,
 
     const bucket = getGridFSBucket()
     
-    // Create a readable stream from the buffer
     const readableStream = Readable.from(req.file.buffer)
     
-    // Generate unique filename
     const filename = `${Date.now()}-${req.file.originalname}`
     
-    // Upload to GridFS
     const uploadStream = bucket.openUploadStream(filename, {
       metadata: {
         contentType: req.file.mimetype,
@@ -47,7 +39,6 @@ uploadsRouter.post('/image', authMiddleware, upload.single('image'), async (req,
       },
     })
 
-    // Pipe the file data to GridFS
     readableStream.pipe(uploadStream)
 
     uploadStream.on('finish', () => {
@@ -69,8 +60,6 @@ uploadsRouter.post('/image', authMiddleware, upload.single('image'), async (req,
     next(error)
   }
 })
-
-// Upload multiple images (requires authentication)
 uploadsRouter.post('/images', authMiddleware, upload.array('images', 5), async (req, res, next) => {
   try {
     const files = req.files as Express.Multer.File[]
@@ -117,18 +106,14 @@ uploadsRouter.post('/images', authMiddleware, upload.array('images', 5), async (
     next(error)
   }
 })
-
-// Get image by ID
 uploadsRouter.get('/image/:id', async (req, res, next) => {
   try {
     const bucket = getGridFSBucket()
     const { id } = req.params
 
-    // Convert string ID to ObjectId
     const mongoose = await import('mongoose')
     const fileId = new mongoose.Types.ObjectId(id)
 
-    // Find the file
     const files = await bucket.find({ _id: fileId }).toArray()
     
     if (files.length === 0) {
@@ -137,12 +122,10 @@ uploadsRouter.get('/image/:id', async (req, res, next) => {
 
     const file = files[0]
 
-    // Set headers
     const contentType = (file.metadata as any)?.contentType || 'image/jpeg'
     res.set('Content-Type', contentType)
     res.set('Content-Length', file.length.toString())
 
-    // Stream the file
     const downloadStream = bucket.openDownloadStream(fileId)
     downloadStream.pipe(res)
 
@@ -153,8 +136,6 @@ uploadsRouter.get('/image/:id', async (req, res, next) => {
     next(error)
   }
 })
-
-// Delete image by ID (requires authentication)
 uploadsRouter.delete('/image/:id', authMiddleware, async (req, res, next) => {
   try {
     const bucket = getGridFSBucket()

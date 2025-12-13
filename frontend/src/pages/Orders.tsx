@@ -113,7 +113,7 @@ export default function Orders() {
       } else {
         await orderService.sellerConfirm(orderId)
       }
-      await loadOrders() // Wait for orders to reload
+      await loadOrders()
       setModal({
         isOpen: true,
         title: 'Success',
@@ -332,7 +332,6 @@ export default function Orders() {
                             const hasInactiveSeller = order.items?.some((item: any) => item.sellerBanned || item.sellerDeleted)
                             
                             if (hasInactiveSeller) {
-                              // Only allow disputes for orders with banned/deleted sellers
                               return (
                                 <>
                                   {!order.disputeId ? (
@@ -356,7 +355,7 @@ export default function Orders() {
                               )
                             }
                             
-                            // Normal actions for active sellers
+                            
                             return (
                               <>
                                 {order.status === 'waiting_to_meet' && !order.disputeId && (
@@ -418,7 +417,7 @@ export default function Orders() {
                 </div>
               )
             ) : (
-              // Sales Tab
+              
               sellerOrders.length === 0 ? (
                 <div style={{ textAlign: 'center', marginTop: '2rem' }}>
                   <p className="muted">No sales yet</p>
@@ -555,7 +554,6 @@ export default function Orders() {
                             const buyerInactive = order.buyerBanned || order.buyerDeleted
                             
                             if (buyerInactive) {
-                              // Only allow disputes for orders with banned/deleted buyers
                               return (
                                 <>
                                   {!order.disputeId ? (
@@ -579,7 +577,6 @@ export default function Orders() {
                               )
                             }
                             
-                            // Normal actions for active buyers
                             return (
                               <>
                                 {order.status === 'waiting_to_meet' && order.sellerConfirmed !== true && !order.disputeId && (

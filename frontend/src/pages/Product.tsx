@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import { Product } from '../types'
 import { productService } from '../services/productService'
@@ -19,6 +19,7 @@ interface Review {
 
 export default function ProductPage() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const [product, setProduct] = useState<Product | null>(null)
   const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
@@ -196,6 +197,18 @@ export default function ProductPage() {
             
             <div style={{ marginBottom: '1rem' }}>
               <strong>Condition:</strong> {product.condition}
+            </div>
+            <div style={{ marginBottom: '1rem' }}>
+              <strong>Seller:</strong>{' '}
+              <span
+                onClick={() => {
+                  const sid = (product.sellerId && (product.sellerId._id || product.sellerId)) || undefined
+                  if (sid) navigate(`/user/${sid}`)
+                }}
+                style={{ color: product.sellerId ? '#2563eb' : 'inherit', cursor: product.sellerId ? 'pointer' : 'default', fontWeight: 600 }}
+              >
+                {product.sellerName || 'Unknown'}
+              </span>
             </div>
             <div style={{ marginBottom: '1rem' }}>
               <strong>Location:</strong> {productLocation}

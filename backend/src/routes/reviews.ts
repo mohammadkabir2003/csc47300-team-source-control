@@ -9,28 +9,22 @@ import { reviewRateLimiter } from '../middleware/rateLimiter.js'
 
 export const reviewsRouter = express.Router()
 
-// Get reviews for a product
 reviewsRouter.get('/product/:productId', async (req, res, next) => {
   try {
     const { productId } = req.params
-    
-    // Get reviews (exclude deleted reviews)
     const reviews = await Review.find({ productId, isDeleted: { $ne: true } })
       .populate('userId', 'firstName lastName isBanned isDeleted')
       .sort('-createdAt')
       .lean()
 
-    // Filter out reviews where user is deleted (but keep banned users)
     const visibleReviews = reviews.filter(review => {
       const user = review.userId as any
-      // Exclude if user is deleted
       if (user?.isDeleted) {
         return false
       }
       return true
     })
 
-    // Add userBanned flag to reviews from banned users
     const reviewsWithStatus = visibleReviews.map(review => {
       const user = review.userId as any
       return {
@@ -48,33 +42,28 @@ reviewsRouter.get('/product/:productId', async (req, res, next) => {
   }
 })
 
-// Check if user can review a product
 reviewsRouter.get('/can-review/:productId', authMiddleware, async (req, res, next) => {
   try {
     const { productId } = req.params
     const user = req.user!
 
-    // Check if product exists
     const product = await Product.findById(productId)
     if (!product) {
       res.json({ success: true, canReview: false, reason: 'Product not found' })
       return
     }
 
-    // Can't review own product
     if (product.sellerId.toString() === user._id.toString()) {
       res.json({ success: true, canReview: false, reason: 'own_product' })
       return
     }
 
-    // Check if already reviewed
     const existingReview = await Review.findOne({ productId, userId: user._id })
     if (existingReview) {
       res.json({ success: true, canReview: false, reason: 'already_reviewed' })
       return
     }
 
-    // Check if user has a completed order (both confirmed, not deleted) with this product
     const completedOrder = await Order.findOne({
       userId: user._id,
       'items.productId': productId,
@@ -94,7 +83,6 @@ reviewsRouter.get('/can-review/:productId', authMiddleware, async (req, res, nex
   }
 })
 
-// Create a review (authenticated)
 reviewsRouter.post('/', authMiddleware, reviewRateLimiter, async (req, res, next) => {
   try {
     const { productId, rating, comment } = req.body
@@ -108,18 +96,15 @@ reviewsRouter.post('/', authMiddleware, reviewRateLimiter, async (req, res, next
       throw new AppError('Rating must be between 1 and 5', 400)
     }
 
-    // Check if product exists
     const product = await Product.findById(productId)
     if (!product) {
       throw new AppError('Product not found', 404)
     }
 
-    // Prevent seller from reviewing their own product
     if (product.sellerId.toString() === user._id.toString()) {
       throw new AppError('You cannot review your own product', 403)
     }
 
-    // Check if user already reviewed this product (including deleted reviews to prevent bombing)
     const existingReview = await Review.findOne({ productId, userId: user._id })
     if (existingReview) {
       if (existingReview.isDeleted) {
@@ -128,7 +113,6 @@ reviewsRouter.post('/', authMiddleware, reviewRateLimiter, async (req, res, next
       throw new AppError('You have already reviewed this product', 400)
     }
 
-    // Check if user has completed order with this product (both buyer and seller confirmed, not deleted)
     const completedOrder = await Order.findOne({
       userId: user._id,
       'items.productId': productId,
@@ -162,7 +146,6 @@ reviewsRouter.post('/', authMiddleware, reviewRateLimiter, async (req, res, next
   }
 })
 
-// Update review (authenticated, own reviews only)
 reviewsRouter.put('/:id', authMiddleware, async (req, res, next) => {
   try {
     const { id } = req.params
@@ -202,7 +185,6 @@ reviewsRouter.put('/:id', authMiddleware, async (req, res, next) => {
   }
 })
 
-// Delete review (authenticated, own reviews only)
 reviewsRouter.delete('/:id', authMiddleware, async (req, res, next) => {
   try {
     const { id } = req.params

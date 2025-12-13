@@ -11,14 +11,12 @@ export default function Sell() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
 
-  // Redirect if not logged in
   useEffect(() => {
     if (!user) {
       navigate('/login')
     }
   }, [user, navigate])
-
-  // Don't render the form if not logged in
+  
   if (!user) {
     return (
       <>
@@ -51,7 +49,7 @@ export default function Sell() {
     
     setSelectedFiles(prev => [...prev, ...files])
     
-    // Create preview URLs
+    
     files.forEach(file => {
       const reader = new FileReader()
       reader.onloadend = () => {
@@ -78,7 +76,7 @@ export default function Sell() {
     }
 
     try {
-      // Upload images first if any
+      
       let imageIds: string[] = []
       if (selectedFiles.length > 0) {
         imageIds = await productService.uploadImages(selectedFiles)
@@ -90,7 +88,7 @@ export default function Sell() {
         price: parseFloat(formData.price).toFixed(2),
         category: formData.category,
         condition: formData.condition,
-        campus: formData.location, // Backend expects 'campus' not 'location'
+        campus: formData.location,
         quantity: parseInt(formData.quantity),
         seller_id: user.id.toString(),
         is_active: true,

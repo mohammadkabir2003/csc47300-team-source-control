@@ -8,8 +8,6 @@ import { authMiddleware } from '../middleware/auth.js'
 import { getAvailableQuantity } from '../utils/inventory.js'
 
 export const productsRouter = express.Router()
-
-// Get all products with filters
 productsRouter.get('/', async (req, res, next) => {
   try {
     const {
@@ -24,7 +22,6 @@ productsRouter.get('/', async (req, res, next) => {
       limit = 20,
     } = req.query
 
-    // First find banned/deleted users to exclude their products
     const bannedOrDeletedUsers = await User.find({
       $or: [{ isBanned: true }, { isDeleted: true }]
     }).select('_id')
@@ -58,14 +55,12 @@ productsRouter.get('/', async (req, res, next) => {
       Product.countDocuments(query),
     ])
 
-    // Calculate available quantity for each product
     const productsWithAvailability = await Promise.all(
       products.map(async (product) => {
         const availableQuantity = await getAvailableQuantity(product._id, product.quantity)
         return {
           ...product,
           availableQuantity,
-          // Update status based on availability
           status: availableQuantity === 0 ? 'sold' : product.status,
         }
       })
@@ -86,7 +81,6 @@ productsRouter.get('/', async (req, res, next) => {
   }
 })
 
-// Get product by ID
 productsRouter.get('/:id', async (req, res, next) => {
   try {
     const { id } = req.params
@@ -97,13 +91,11 @@ productsRouter.get('/:id', async (req, res, next) => {
       throw new AppError('Product not found', 404)
     }
 
-    // Check if seller is banned or deleted
     const seller = product.sellerId as any
     if (seller?.isBanned || seller?.isDeleted) {
       throw new AppError('Product not available - seller account is inactive', 404)
     }
 
-    // Calculate available quantity
     const availableQuantity = await getAvailableQuantity(product._id, product.quantity)
 
     res.json({
@@ -119,7 +111,6 @@ productsRouter.get('/:id', async (req, res, next) => {
   }
 })
 
-// Create product (authenticated)
 productsRouter.post('/', authMiddleware, async (req, res, next) => {
   try {
     const {
@@ -137,7 +128,6 @@ productsRouter.post('/', authMiddleware, async (req, res, next) => {
 
     console.log('Product creation request:', { name, description, price, category, condition, campus, quantity, images })
 
-    // Validation
     if (!name || !description || !price || !category || !condition || !campus) {
       const missing = []
       if (!name) missing.push('name')
@@ -150,7 +140,6 @@ productsRouter.post('/', authMiddleware, async (req, res, next) => {
       throw new AppError(`Missing required fields: ${missing.join(', ')}`, 400)
     }
 
-    // Check if category exists, if not create it
     let categoryDoc = await Category.findOne({ slug: category.toLowerCase().replace(/\s+/g, '-') })
     if (!categoryDoc) {
       categoryDoc = await Category.create({
@@ -176,7 +165,6 @@ productsRouter.post('/', authMiddleware, async (req, res, next) => {
 
     await product.save()
 
-    // Update category product count
     await Category.findByIdAndUpdate(categoryDoc._id, {
       $inc: { productCount: 1 },
     })
@@ -191,7 +179,6 @@ productsRouter.post('/', authMiddleware, async (req, res, next) => {
   }
 })
 
-// Update product (authenticated, own products only)
 productsRouter.put('/:id', authMiddleware, async (req, res, next) => {
   try {
     const { id } = req.params
@@ -204,12 +191,10 @@ productsRouter.put('/:id', authMiddleware, async (req, res, next) => {
       throw new AppError('Product not found', 404)
     }
 
-    // Check ownership or admin
     if (product.sellerId.toString() !== user!._id.toString() && !['admin1', 'admin2'].includes(user!.role)) {
       throw new AppError('Not authorized to update this product', 403)
     }
 
-    // If quantity is being updated, validate against active orders
     if (updates.quantity !== undefined && updates.quantity !== product.quantity) {
       const availableQuantity = await getAvailableQuantity(product._id, product.quantity)
       const orderedQuantity = product.quantity - availableQuantity
@@ -223,7 +208,6 @@ productsRouter.put('/:id', authMiddleware, async (req, res, next) => {
       }
     }
 
-    // Update product
     Object.assign(product, updates)
     await product.save()
 
@@ -237,7 +221,6 @@ productsRouter.put('/:id', authMiddleware, async (req, res, next) => {
   }
 })
 
-// Delete product (authenticated, own products only)
 productsRouter.delete('/:id', authMiddleware, async (req, res, next) => {
   try {
     const { id } = req.params
@@ -249,12 +232,10 @@ productsRouter.delete('/:id', authMiddleware, async (req, res, next) => {
       throw new AppError('Product not found', 404)
     }
 
-    // Check ownership or admin
     if (product.sellerId.toString() !== user!._id.toString() && !['admin1', 'admin2'].includes(user!.role)) {
       throw new AppError('Not authorized to delete this product', 403)
     }
 
-    // Check if there are active orders with this product
     const activeOrders = await Order.countDocuments({
       'items.productId': id,
       status: { $in: ['waiting_to_meet'] },
@@ -265,13 +246,11 @@ productsRouter.delete('/:id', authMiddleware, async (req, res, next) => {
       throw new AppError('Cannot delete product with active orders. Please wait for orders to complete or cancel them first.', 400)
     }
 
-    // Soft delete instead of hard delete
     product.isDeleted = true
     product.deletedAt = new Date()
     product.deletedBy = user!._id
     await product.save()
 
-    // Update category product count
     await Category.findOneAndUpdate(
       { name: product.category },
       { $inc: { productCount: -1 } }
@@ -286,7 +265,6 @@ productsRouter.delete('/:id', authMiddleware, async (req, res, next) => {
   }
 })
 
-// Get user's products (exclude soft-deleted)
 productsRouter.get('/user/my-products', authMiddleware, async (req, res, next) => {
   try {
     const user = req.user!
@@ -296,7 +274,6 @@ productsRouter.get('/user/my-products', authMiddleware, async (req, res, next) =
       isDeleted: { $ne: true }
     }).sort('-createdAt').lean()
 
-    // Calculate available quantity for each product
     const productsWithAvailability = await Promise.all(
       products.map(async (product) => {
         const availableQuantity = await getAvailableQuantity(product._id, product.quantity)

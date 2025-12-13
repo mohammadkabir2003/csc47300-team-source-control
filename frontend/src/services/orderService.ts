@@ -30,7 +30,7 @@ class OrderService {
   ): Promise<DBOrder> {
     const response = await axios.post(`${API_URL}/orders`, { 
       items,
-      shippingAddress: billingAddress, // Using billing as shipping for pickup
+      shippingAddress: billingAddress,
       billingAddress,
       paymentMethod,
       cardDetails

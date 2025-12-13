@@ -10,7 +10,6 @@ export default function Checkout() {
   const [error, setError] = useState('')
   const navigate = useNavigate()
   
-  // Billing address state
   const [billingAddress, setBillingAddress] = useState({
     street: '',
     city: '',
@@ -19,22 +18,20 @@ export default function Checkout() {
     country: 'USA'
   })
   
-  // Payment card state
+  
   const [cardNumber, setCardNumber] = useState('')
   const [expirationDate, setExpirationDate] = useState('')
   const [cvv, setCvv] = useState('')
   const [cardholderName, setCardholderName] = useState('')
 
-  const total = getTotalPrice() // Already formatted string
+  const total = getTotalPrice()
 
   const validateCard = () => {
-    // Validate card number (16 digits)
     if (!/^\d{16}$/.test(cardNumber.replace(/\s/g, ''))) {
       setError('Card number must be 16 digits')
       return false
     }
 
-    // Validate expiration date (MM/YY format and must be future date)
     if (!/^\d{2}\/\d{2}$/.test(expirationDate)) {
       setError('Expiration date must be in MM/YY format')
       return false
@@ -42,7 +39,7 @@ export default function Checkout() {
 
     const [month, year] = expirationDate.split('/').map(Number)
     const currentDate = new Date()
-    const currentYear = currentDate.getFullYear() % 100 // Get last 2 digits
+    const currentYear = currentDate.getFullYear() % 100
     const currentMonth = currentDate.getMonth() + 1
 
     if (month < 1 || month > 12) {
@@ -55,7 +52,6 @@ export default function Checkout() {
       return false
     }
 
-    // Validate CVV (3-4 digits)
     if (!/^\d{3,4}$/.test(cvv)) {
       setError('CVV must be digits only')
       return false
@@ -72,13 +68,12 @@ export default function Checkout() {
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Validate billing address
+    
     if (!billingAddress.street || !billingAddress.city || !billingAddress.state || !billingAddress.zipCode) {
       setError('Please fill in all billing address fields')
       return
     }
     
-    // Validate card
     if (!validateCard()) {
       return
     }
@@ -92,7 +87,6 @@ export default function Checkout() {
         quantity: item.quantity
       }))
 
-      // Clean card number
       const cleanCardNumber = cardNumber.replace(/\s/g, '')
 
       await orderService.createOrder(items, billingAddress, 'credit_card', {

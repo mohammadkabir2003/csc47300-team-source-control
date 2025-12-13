@@ -60,7 +60,6 @@ const cartSchema = new Schema<ICart>(
   }
 )
 
-// Calculate total amount before saving
 cartSchema.pre('save', function () {
   const total = this.items.reduce((sum, item) => {
     return sum + (parseFloat(item.price) * item.quantity)

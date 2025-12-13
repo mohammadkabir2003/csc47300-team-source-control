@@ -9,7 +9,7 @@ class CartService {
       const response = await axios.get(API_URL)
       const items = response.data.data?.items || []
       
-      // Convert to Cart format (productId -> quantity)
+      
       const cart: Cart = {}
       items.forEach((item: any) => {
         if (item.productId?._id) {
@@ -28,13 +28,13 @@ class CartService {
       const response = await axios.get(API_URL)
       const items = response.data.data?.items || []
       
-      // Convert backend format to CartItem format
+      
       return items.map((item: any) => ({
         id: item.productId?._id || item._id,
         product: item.productId ? {
           id: item.productId._id,
           title: item.productId.name,
-          price: item.productId.price, // String price
+          price: item.productId.price,
           images: item.productId.images,
           status: item.productId.status
         } : null,

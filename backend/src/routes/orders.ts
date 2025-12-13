@@ -9,19 +9,15 @@ import { orderCreationRateLimiter } from '../middleware/rateLimiter.js'
 
 export const ordersRouter = express.Router()
 
-// All order routes require authentication
 ordersRouter.use(authMiddleware)
 
-// Get seller's orders (orders containing their products) - MUST be before /:id route!
 ordersRouter.get('/seller/my-orders', async (req, res, next) => {
   try {
     const userId = req.user!._id
 
-    // Find all products by this seller
     const sellerProducts = await Product.find({ sellerId: userId }).select('_id')
     const productIds = sellerProducts.map(p => p._id)
 
-    // Find orders containing these products
     const orders = await Order.find({
       'items.productId': { $in: productIds },
       isDeleted: { $ne: true }
@@ -32,12 +28,10 @@ ordersRouter.get('/seller/my-orders', async (req, res, next) => {
       .sort('-createdAt')
       .lean()
 
-    // Add buyer ban/delete status to each order and filter out deleted disputes
     const ordersWithBuyerStatus = orders.map(order => {
       const buyer = order.userId as any
       const dispute = order.disputeId as any
       
-      // If dispute is deleted, remove disputeId from order
       const orderData = { ...order }
       if (dispute?.isDeleted) {
         orderData.disputeId = undefined
@@ -59,7 +53,6 @@ ordersRouter.get('/seller/my-orders', async (req, res, next) => {
   }
 })
 
-// Get user's orders
 ordersRouter.get('/', async (req, res, next) => {
   try {
     const userId = req.user!._id
@@ -70,12 +63,10 @@ ordersRouter.get('/', async (req, res, next) => {
       .populate('disputeId', 'isDeleted')
       .lean()
 
-    // Populate seller status for each product in orders
     const ordersWithSellerStatus = await Promise.all(
       orders.map(async (order) => {
         const dispute = order.disputeId as any
         
-        // If dispute is deleted, remove disputeId from order
         const orderData = { ...order }
         if (dispute?.isDeleted) {
           orderData.disputeId = undefined
@@ -111,7 +102,6 @@ ordersRouter.get('/', async (req, res, next) => {
   }
 })
 
-// Get order by ID
 ordersRouter.get('/:id', async (req, res, next) => {
   try {
     const { id } = req.params
@@ -126,12 +116,10 @@ ordersRouter.get('/:id', async (req, res, next) => {
       throw new AppError('Order not found', 404)
     }
 
-    // Check ownership or admin
     if (order.userId.toString() !== userId.toString() && !['admin1', 'admin2'].includes(req.user!.role)) {
       throw new AppError('Not authorized to view this order', 403)
     }
 
-    // If dispute is deleted, remove disputeId from order
     const dispute = order.disputeId as any
     if (dispute?.isDeleted) {
       order.disputeId = undefined
@@ -146,7 +134,6 @@ ordersRouter.get('/:id', async (req, res, next) => {
   }
 })
 
-// Create order from cart
 ordersRouter.post('/', orderCreationRateLimiter, async (req, res, next) => {
   const session = await Order.startSession()
   
@@ -174,28 +161,23 @@ ordersRouter.post('/', orderCreationRateLimiter, async (req, res, next) => {
       throw new AppError('Cart is empty', 400)
     }
 
-    // Verify all products are still available using dynamic inventory calculation
-    // Use FOR LOOP to ensure atomic checks within transaction
     for (const item of cart.items) {
       const product = await Product.findById(item.productId).session(session)
       if (!product || product.status === 'sold' || product.isDeleted) {
         throw new AppError(`Product ${item.name} is no longer available`, 400)
       }
       
-      // Check seller is not deleted or banned
       const seller = await (await import('../models/User.js')).User.findById(product.sellerId).session(session)
       if (seller?.isDeleted || seller?.isBanned) {
         throw new AppError(`Product ${item.name} is no longer available (seller account issues)`, 400)
       }
       
-      // Calculate available quantity dynamically within transaction
       const available = await getAvailableQuantity(item.productId, product.quantity)
       if (available < item.quantity) {
         throw new AppError(`Product ${item.name} only has ${available} available`, 400)
       }
     }
 
-    // Create order with snapshot of cart items
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
     
     const order = new Order({
@@ -209,7 +191,6 @@ ordersRouter.post('/', orderCreationRateLimiter, async (req, res, next) => {
 
     await order.save({ session })
 
-    // Create payment record with full billing and card info
     const Payment = (await import('../models/Payment.js')).Payment
     const transactionId = `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
     
@@ -235,14 +216,9 @@ ordersRouter.post('/', orderCreationRateLimiter, async (req, res, next) => {
 
     await payment.save({ session })
 
-    // No need to update product quantities - available quantity is calculated dynamically
-    // from: product.quantity (initial stock) - sum of quantities in active orders
-
-    // Clear cart within transaction
     cart.items = []
     await cart.save({ session })
 
-    // Commit transaction - all or nothing
     await session.commitTransaction()
     
     res.status(201).json({
@@ -251,7 +227,6 @@ ordersRouter.post('/', orderCreationRateLimiter, async (req, res, next) => {
       data: order,
     })
   } catch (error) {
-    // Rollback on any error
     await session.abortTransaction()
     next(error)
   } finally {
@@ -259,7 +234,6 @@ ordersRouter.post('/', orderCreationRateLimiter, async (req, res, next) => {
   }
 })
 
-// Buyer confirms meetup/receipt
 ordersRouter.put('/:id/buyer-confirm', async (req, res, next) => {
   try {
     const { id } = req.params
@@ -271,29 +245,24 @@ ordersRouter.put('/:id/buyer-confirm', async (req, res, next) => {
       throw new AppError('Order not found', 404)
     }
 
-    // Prevent confirming if already confirmed
     if (order.buyerConfirmed) {
       throw new AppError('You have already confirmed this order', 400)
     }
 
-    // Can't confirm cancelled or already completed orders
     if (order.status === 'cancelled' || order.status === 'met_and_exchanged') {
       throw new AppError('Cannot confirm this order in current state', 400)
     }
     
-    // Order must be in waiting_to_meet state to confirm
     if (order.status !== 'waiting_to_meet') {
       throw new AppError('Order is not ready for confirmation', 400)
     }
 
-    // Check if user is the buyer
     if (order.userId.toString() !== userId.toString()) {
       throw new AppError('Only the buyer can confirm this order', 403)
     }
 
     order.buyerConfirmed = true
     
-    // If both parties confirmed, mark as met and exchanged
     if (order.sellerConfirmed) {
       order.status = 'met_and_exchanged'
     }
@@ -310,7 +279,6 @@ ordersRouter.put('/:id/buyer-confirm', async (req, res, next) => {
   }
 })
 
-// Seller confirms meetup/delivery
 ordersRouter.put('/:id/seller-confirm', async (req, res, next) => {
   try {
     const { id } = req.params
@@ -322,33 +290,27 @@ ordersRouter.put('/:id/seller-confirm', async (req, res, next) => {
       throw new AppError('Order not found', 404)
     }
 
-    // Prevent confirming if already confirmed
     if (order.sellerConfirmed) {
       throw new AppError('You have already confirmed this order', 400)
     }
 
-    // Can't confirm cancelled or already completed orders
     if (order.status === 'cancelled' || order.status === 'met_and_exchanged') {
       throw new AppError('Cannot confirm this order in current state', 400)
     }
     
-    // Order must be in waiting_to_meet state to confirm
     if (order.status !== 'waiting_to_meet') {
       throw new AppError('Order is not ready for confirmation', 400)
     }
 
-    // Get seller ID from first product
     const firstProduct = order.items[0].productId as any
     const sellerId = firstProduct.sellerId
 
-    // Check if user is the seller
     if (sellerId.toString() !== userId.toString()) {
       throw new AppError('Only the seller can confirm this order', 403)
     }
 
     order.sellerConfirmed = true
     
-    // If both parties confirmed, mark as met and exchanged
     if (order.buyerConfirmed) {
       order.status = 'met_and_exchanged'
     }
@@ -365,7 +327,6 @@ ordersRouter.put('/:id/seller-confirm', async (req, res, next) => {
   }
 })
 
-// Cancel order
 ordersRouter.put('/:id/cancel', async (req, res, next) => {
   try {
     const { id } = req.params
@@ -377,7 +338,6 @@ ordersRouter.put('/:id/cancel', async (req, res, next) => {
       throw new AppError('Order not found', 404)
     }
 
-    // Check ownership
     if (order.userId.toString() !== userId.toString() && !['admin1', 'admin2'].includes(req.user!.role)) {
       throw new AppError('Not authorized to cancel this order', 403)
     }
@@ -389,9 +349,6 @@ ordersRouter.put('/:id/cancel', async (req, res, next) => {
     order.status = 'cancelled'
     await order.save()
 
-    // No need to restore quantities - inventory is calculated dynamically
-    // Cancelled orders are excluded from the calculation
-
     res.json({
       success: true,
       message: 'Order cancelled successfully',
@@ -402,7 +359,6 @@ ordersRouter.put('/:id/cancel', async (req, res, next) => {
   }
 })
 
-// Update order status (for sellers)
 ordersRouter.put('/:id/status', async (req, res, next) => {
   try {
     const { id } = req.params
@@ -415,11 +371,9 @@ ordersRouter.put('/:id/status', async (req, res, next) => {
       throw new AppError('Order not found', 404)
     }
 
-    // Get seller ID from first product
     const firstProduct = order.items[0].productId as any
     const sellerId = firstProduct?.sellerId
 
-    // Check if user is the seller or admin
     const isAuthorized = 
       sellerId?.toString() === userId.toString() || 
       req.user!.role === 'admin1' || 
@@ -429,15 +383,12 @@ ordersRouter.put('/:id/status', async (req, res, next) => {
       throw new AppError('Not authorized to update this order', 403)
     }
 
-    // Validate status
     const validStatuses = ['waiting_to_meet', 'met_and_exchanged', 'cancelled', 'disputed']
     if (!validStatuses.includes(status)) {
       throw new AppError('Invalid status', 400)
     }
 
-    // Prevent changing from cancelled/met_and_exchanged without proper handling
     if (order.status === 'cancelled' && status !== 'cancelled') {
-      // Changing FROM cancelled to active status - check if inventory is available
       for (const item of order.items) {
         const product = await Product.findById(item.productId)
         if (product) {
@@ -457,13 +408,9 @@ ordersRouter.put('/:id/status', async (req, res, next) => {
       throw new AppError('Cannot change status of a completed order except to disputed', 400)
     }
 
-    const previousStatus = order.status
+        const previousStatus = order.status
 
-    // Update order status
     order.status = status as any
-
-    // Inventory is calculated dynamically based on order status
-    // Cancelled orders are excluded from available quantity calculation
     
     await order.save()
 

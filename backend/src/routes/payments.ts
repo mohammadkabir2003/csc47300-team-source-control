@@ -7,10 +7,8 @@ import { authMiddleware } from '../middleware/auth.js'
 
 export const paymentsRouter = express.Router()
 
-// All payment routes require authentication
 paymentsRouter.use(authMiddleware)
 
-// Process payment for an order
 paymentsRouter.post('/process', async (req, res, next) => {
   try {
     const { orderId, paymentMethod, cardDetails, billingAddress } = req.body
@@ -20,13 +18,11 @@ paymentsRouter.post('/process', async (req, res, next) => {
       throw new AppError('Order ID and payment method are required', 400)
     }
 
-    // Find the order
     const order = await Order.findOne({ _id: orderId, userId, isDeleted: false })
     if (!order) {
       throw new AppError('Order not found', 404)
     }
 
-    // Can't pay for cancelled or completed orders
     if (order.status === 'cancelled') {
       throw new AppError('Cannot process payment for a cancelled order', 400)
     }
@@ -35,22 +31,18 @@ paymentsRouter.post('/process', async (req, res, next) => {
       throw new AppError('Order is already completed', 400)
     }
 
-    // Check if payment already exists for this order
     const existingPayment = await Payment.findOne({ orderId, isDeleted: false })
     if (existingPayment && existingPayment.status === 'completed') {
       throw new AppError('Payment already completed for this order', 400)
     }
 
-    // Create payment record
-    // MOCK PAYMENT - Accepts ANY card details without validation
-    // No real payment processing - just stores in MongoDB
     const payment = new Payment({
       orderId,
       userId,
       amount: order.totalAmount,
       currency: 'USD',
       paymentMethod,
-      status: 'completed', // Always success for demo
+      status: 'completed',
       paymentDate: new Date(),
       transactionId: `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
       cardDetails: cardDetails ? {
@@ -84,7 +76,6 @@ paymentsRouter.post('/process', async (req, res, next) => {
   }
 })
 
-// Get payment details by order ID
 paymentsRouter.get('/order/:orderId', async (req, res, next) => {
   try {
     const { orderId } = req.params
@@ -110,7 +101,6 @@ paymentsRouter.get('/order/:orderId', async (req, res, next) => {
   }
 })
 
-// Get all payments for current user
 paymentsRouter.get('/my-payments', async (req, res, next) => {
   try {
     const userId = (req as any).user._id
@@ -145,7 +135,6 @@ paymentsRouter.get('/my-payments', async (req, res, next) => {
   }
 })
 
-// Get payment by ID
 paymentsRouter.get('/:id', async (req, res, next) => {
   try {
     const { id } = req.params
@@ -172,7 +161,6 @@ paymentsRouter.get('/:id', async (req, res, next) => {
   }
 })
 
-// Request refund
 paymentsRouter.post('/:id/refund', async (req, res, next) => {
   try {
     const { id } = req.params
@@ -197,7 +185,6 @@ paymentsRouter.post('/:id/refund', async (req, res, next) => {
       throw new AppError('Only completed payments can be refunded', 400)
     }
 
-    // Process refund
     payment.status = 'refunded'
     payment.refundDate = new Date()
     payment.refundAmount = payment.amount
@@ -205,12 +192,10 @@ paymentsRouter.post('/:id/refund', async (req, res, next) => {
 
     await payment.save()
 
-    // Update order status - inventory is calculated dynamically
     const order = await Order.findById(payment.orderId)
     if (order && order.status !== 'cancelled') {
       order.status = 'cancelled'
       await order.save()
-      // No need to restore inventory - cancelled orders are excluded from calculation
     }
 
     res.json({
@@ -223,7 +208,6 @@ paymentsRouter.post('/:id/refund', async (req, res, next) => {
   }
 })
 
-// Get payment statistics for user
 paymentsRouter.get('/stats/summary', async (req, res, next) => {
   try {
     const userId = (req as any).user._id

@@ -12,7 +12,7 @@ export interface IProduct extends Document {
   sellerEmail: string
   status: 'available' | 'sold' | 'reserved'
   campus: string
-  quantity: number  // This is the original listed quantity
+  quantity: number
   isDeleted: boolean
   deletedAt?: Date
   deletedBy?: mongoose.Types.ObjectId
@@ -92,7 +92,6 @@ const productSchema = new Schema<IProduct>(
   }
 )
 
-// Index for searching
 productSchema.index({ name: 'text', description: 'text' })
 productSchema.index({ category: 1, status: 1 })
 productSchema.index({ sellerId: 1 })

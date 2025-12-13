@@ -19,14 +19,13 @@ export default function AdminCreateAdmin() {
     role: 'admin1'
   })
 
-  // Redirect if not admin2
   if (!user || user.role !== 'admin2') {
     navigate('/admin')
     return null
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setError('') // Clear error when user types
+    setError('')
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
@@ -36,7 +35,6 @@ export default function AdminCreateAdmin() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Validation
     if (!formData.email || !formData.password || !formData.firstName || !formData.lastName) {
       alert('Please fill in all required fields')
       return
@@ -85,7 +83,6 @@ export default function AdminCreateAdmin() {
       console.error('Error response:', error.response)
       console.error('Error data:', error.response?.data)
       
-      // Show detailed backend error message
       const errorMessage = error.response?.data?.message || error.message || 'Error creating admin user. Please try again.'
       setError(errorMessage)
     } finally {

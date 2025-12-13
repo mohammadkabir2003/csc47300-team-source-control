@@ -21,12 +21,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const { user } = useAuth()
 
-  // Reload cart when user changes (login/logout)
   useEffect(() => {
     if (user) {
       loadCart()
     } else {
-      // Clear cart when logged out
       setCart({})
       setCartItems([])
     }
@@ -37,7 +35,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const loadedCart = await cartService.getCart()
       setCart(loadedCart)
       
-      // Also load full cart items with product details
       const items = await cartService.getCartItems()
       setCartItems(items)
     } catch (error) {
@@ -49,7 +46,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     try {
       const updatedCart = await cartService.addToCart(productId, quantity)
       setCart(updatedCart)
-      await loadCart() // Reload to get updated items
+      await loadCart()
     } catch (error) {
       console.error('Failed to add to cart:', error)
       throw error

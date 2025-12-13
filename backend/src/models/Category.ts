@@ -51,7 +51,6 @@ const categorySchema = new Schema<ICategory>(
   }
 )
 
-// Auto-generate slug from name
 categorySchema.pre('save', async function () {
   if (this.isModified('name')) {
     this.slug = this.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '')

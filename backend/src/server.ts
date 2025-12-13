@@ -10,6 +10,7 @@ import { cartRouter } from './routes/cart.js'
 import { ordersRouter } from './routes/orders.js'
 import { categoriesRouter } from './routes/categories.js'
 import { adminRouter } from './routes/admin.js'
+import { usersRouter } from './routes/users.js'
 import { paymentsRouter } from './routes/payments.js'
 import { uploadsRouter } from './routes/uploads.js'
 import { reviewsRouter } from './routes/reviews.js'
@@ -18,8 +19,6 @@ import { errorHandler } from './middleware/errorHandler.js'
 import rateLimit from 'express-rate-limit'
 
 dotenv.config()
-
-// Connect to MongoDB and initialize GridFS
 connectDatabase().then(() => {
   initGridFS()
 })
@@ -27,7 +26,6 @@ connectDatabase().then(() => {
 const app = express()
 const PORT = process.env.PORT || 5001
 
-// Middleware
 app.use(helmet())
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
@@ -36,14 +34,12 @@ app.use(cors({
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
-// Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000 // limit each IP to 1000 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 1000
 })
 app.use('/api', limiter)
 
-// Routes
 app.use('/api/auth', authRouter)
 app.use('/api/products', productsRouter)
 app.use('/api/cart', cartRouter)
@@ -53,14 +49,14 @@ app.use('/api/payments', paymentsRouter)
 app.use('/api/uploads', uploadsRouter)
 app.use('/api/reviews', reviewsRouter)
 app.use('/api/disputes', disputesRouter)
+// Public user profiles (mounted before admin router)
+app.use('/api/users', usersRouter)
 app.use('/api/admin', adminRouter)
 
-// Health check
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
-// Error handling
 app.use(errorHandler)
 
 app.listen(PORT, () => {

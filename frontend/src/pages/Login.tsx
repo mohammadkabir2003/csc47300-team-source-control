@@ -11,14 +11,12 @@ export default function Login() {
   const { login, user } = useAuth()
   const navigate = useNavigate()
 
-  // Redirect if already logged in
   useEffect(() => {
     if (user) {
       navigate('/market')
     }
   }, [user, navigate])
-
-  // Show message if already logged in
+  
   if (user) {
     return (
       <>

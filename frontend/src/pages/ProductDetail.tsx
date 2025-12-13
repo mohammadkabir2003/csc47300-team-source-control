@@ -50,7 +50,7 @@ export default function ProductDetail() {
         rating: editRating
       })
       setEditingReviewId(null)
-      loadProductData() // Reload to show updated review
+      loadProductData()
     } catch (error) {
       console.error('Error updating review:', error)
       alert('Failed to update review')
@@ -63,7 +63,7 @@ export default function ProductDetail() {
     }
     try {
       await adminService.deleteReview(reviewId)
-      loadProductData() // Reload to reflect deletion
+      loadProductData()
     } catch (error) {
       console.error('Error deleting review:', error)
       alert('Failed to delete review')
@@ -76,7 +76,7 @@ export default function ProductDetail() {
     }
     try {
       await adminService.restoreReview(reviewId)
-      loadProductData() // Reload to reflect restoration
+      loadProductData()
     } catch (error) {
       console.error('Error restoring review:', error)
       alert('Failed to restore review')
@@ -207,7 +207,15 @@ export default function ProductDetail() {
               </div>
               <div style={{ marginBottom: '0.75rem' }}>
                 <label className="muted" style={{ fontSize: '0.875rem' }}>Seller</label>
-                <p style={{ fontWeight: 600 }}>{product.sellerName || 'Unknown'}</p>
+                <p
+                  style={{ fontWeight: 600, cursor: product.sellerId ? 'pointer' : 'default', color: product.sellerId ? '#2563eb' : 'inherit' }}
+                  onClick={() => {
+                    const sid = (product.sellerId && (product.sellerId._id || product.sellerId)) || undefined
+                    if (sid) navigate(`/user/${sid}`)
+                  }}
+                >
+                  {product.sellerName || 'Unknown'}
+                </p>
                 <p className="muted" style={{ fontSize: '0.875rem' }}>{product.sellerEmail}</p>
               </div>
               <div style={{ marginBottom: '0.75rem' }}>

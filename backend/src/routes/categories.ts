@@ -3,8 +3,6 @@ import { Category } from '../models/Category.js'
 import { AppError } from '../middleware/errorHandler.js'
 
 export const categoriesRouter = express.Router()
-
-// Get all categories
 categoriesRouter.get('/', async (req, res, next) => {
   try {
     const categories = await Category.find({ isDeleted: { $ne: true } }).sort('name')
@@ -18,7 +16,6 @@ categoriesRouter.get('/', async (req, res, next) => {
   }
 })
 
-// Get category by slug
 categoriesRouter.get('/:slug', async (req, res, next) => {
   try {
     const { slug } = req.params

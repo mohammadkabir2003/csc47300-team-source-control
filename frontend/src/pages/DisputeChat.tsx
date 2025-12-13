@@ -62,7 +62,7 @@ export default function DisputeChat() {
 
   useEffect(() => {
     loadDispute()
-    const interval = setInterval(loadDispute, 5000) // Poll for new messages
+    const interval = setInterval(loadDispute, 5000)
     return () => clearInterval(interval)
   }, [id])
 
@@ -92,7 +92,7 @@ export default function DisputeChat() {
     
     if (!newMessage.trim() || !id) return
 
-    // Check if order is deleted
+    
     if (dispute?.orderDeleted) {
       setModal({
         isOpen: true,
@@ -103,7 +103,7 @@ export default function DisputeChat() {
       return
     }
 
-    // Check if chat is locked
+    
     if (dispute?.status === 'resolved' || dispute?.status === 'closed') {
       setModal({
         isOpen: true,
@@ -118,7 +118,7 @@ export default function DisputeChat() {
     try {
       await disputeService.addMessage(id, newMessage)
       setNewMessage('')
-      await loadDispute() // Reload to get new message
+      await loadDispute()
     } catch (error: any) {
       setModal({
         isOpen: true,
@@ -197,7 +197,7 @@ export default function DisputeChat() {
           <a href="/orders" className="btn btn-secondary">Back to Orders</a>
         </header>
 
-        {/* Dispute Info */}
+        
         <div className="card" style={{ marginBottom: '1rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
             <div>
@@ -269,7 +269,7 @@ export default function DisputeChat() {
           )}
         </div>
 
-        {/* Chat Messages */}
+        
         <div className="card" style={{ 
           height: '500px', 
           display: 'flex', 
@@ -284,7 +284,7 @@ export default function DisputeChat() {
             <h3 style={{ margin: 0 }}>Messages</h3>
           </div>
 
-          {/* Messages Area */}
+          
           <div style={{ 
             flex: 1, 
             overflowY: 'auto', 
@@ -315,7 +315,7 @@ export default function DisputeChat() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Message Input */}
+          
           <form onSubmit={handleSendMessage} style={{ 
             padding: '1rem', 
             borderTop: '1px solid var(--color-border)',

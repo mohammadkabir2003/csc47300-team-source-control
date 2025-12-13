@@ -11,9 +11,7 @@ const getAuthHeaders = () => {
   }
 }
 
-// ========== USERS ==========
 export const adminService = {
-  // Users
   getUsers: async (params?: { page?: number; limit?: number; search?: string; role?: string; includeDeleted?: boolean }) => {
     const response = await axios.get(`${API_URL}/users`, { ...getAuthHeaders(), params })
     return response.data
@@ -49,7 +47,6 @@ export const adminService = {
     return response.data
   },
 
-  // Products
   getProducts: async (params?: { page?: number; limit?: number; search?: string; category?: string; status?: string; includeDeleted?: boolean }) => {
     const response = await axios.get(`${API_URL}/products`, { ...getAuthHeaders(), params })
     return response.data
@@ -75,7 +72,6 @@ export const adminService = {
     return response.data
   },
 
-  // Orders
   getOrders: async (params?: { page?: number; limit?: number; status?: string; search?: string; includeDeleted?: boolean }) => {
     const response = await axios.get(`${API_URL}/orders`, { ...getAuthHeaders(), params })
     return response.data
@@ -96,7 +92,6 @@ export const adminService = {
     return response.data
   },
 
-  // Categories
   getCategories: async (params?: { includeDeleted?: boolean }) => {
     const response = await axios.get(`${API_URL}/categories`, { ...getAuthHeaders(), params })
     return response.data
@@ -122,7 +117,6 @@ export const adminService = {
     return response.data
   },
 
-  // Coupons
   getCoupons: async () => {
     const response = await axios.get(`${API_URL}/coupons`, getAuthHeaders())
     return response.data
@@ -143,7 +137,6 @@ export const adminService = {
     return response.data
   },
 
-  // Reviews
   getReviews: async (params?: { page?: number; limit?: number; productId?: string }) => {
     const response = await axios.get(`${API_URL}/reviews`, { ...getAuthHeaders(), params })
     return response.data
@@ -164,7 +157,6 @@ export const adminService = {
     return response.data
   },
 
-  // Messages
   getMessages: async (params?: { page?: number; limit?: number }) => {
     const response = await axios.get(`${API_URL}/messages`, { ...getAuthHeaders(), params })
     return response.data
@@ -175,7 +167,6 @@ export const adminService = {
     return response.data
   },
 
-  // Payments
   getPayments: async (params?: { page?: number; limit?: number; orderId?: string }) => {
     const response = await axios.get(`${API_URL}/payments`, { ...getAuthHeaders(), params })
     return response.data
@@ -186,7 +177,6 @@ export const adminService = {
     return response.data
   },
 
-  // Statistics
   getStats: async () => {
     const response = await axios.get(`${API_URL}/stats`, getAuthHeaders())
     return response.data

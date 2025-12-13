@@ -75,15 +75,14 @@ export default function MyListings() {
     setEditMode(false)
     setActiveTab('details')
 
-    // Load reviews for this product
+    
     try {
       const reviewRes = await axios.get(`/api/reviews/product/${listing._id}`)
       setReviews(reviewRes.data.data || [])
     } catch (error) {
       setReviews([])
     }
-
-    // Load orders containing this product
+    
     try {
       const orderRes = await axios.get(`/api/orders/seller/my-orders`)
       const productOrders = (orderRes.data.data || []).filter((order: Order) =>
@@ -112,7 +111,6 @@ export default function MyListings() {
       setModal({ isOpen: true, title: 'Success', message: 'Listing updated successfully', type: 'success' })
       setEditMode(false)
       loadListings()
-      // Update selected listing locally
       setSelectedListing({ ...selectedListing, ...dataToSave })
     } catch (error: any) {
       setModal({ isOpen: true, title: 'Error', message: error.response?.data?.message || 'Failed to update listing', type: 'error' })

@@ -24,6 +24,7 @@ import AdminPayments from './pages/AdminPayments'
 import AdminDisputes from './pages/AdminDisputes'
 import UserDetail from './pages/UserDetail'
 import ProductDetail from './pages/ProductDetail'
+import UserProfile from './pages/UserProfile'
 import PaymentDetail from './pages/PaymentDetail'
 import DisputeChat from './pages/DisputeChat'
 import MyListings from './pages/MyListings'
@@ -47,6 +48,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/user" element={<User />} />
+            <Route path="/user/:id" element={<UserProfile />} />
             <Route path="/safety" element={<Safety />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/update-password" element={<UpdatePassword />} />

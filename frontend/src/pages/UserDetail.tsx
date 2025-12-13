@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { adminService } from '../services/adminService'
 import { useAuth } from '../context/AuthContext'
+import ProductCard from '../components/ProductCard'
 
 export default function UserDetail() {
   const { id } = useParams<{ id: string }>()
@@ -135,28 +136,8 @@ export default function UserDetail() {
           <h2 className="text-xl font-bold mb-4">Products Listed ({history.products.length})</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {history.products.map((product: any) => (
-              <div
-                key={product._id}
-                className="border rounded-lg p-3 hover:shadow-md transition cursor-pointer"
-                onClick={() => navigate(`/admin/products/${product._id}`)}
-              >
-                {product.images?.[0] && (
-                  <img src={product.images[0]} alt={product.name} className="w-full h-32 object-cover rounded mb-2" />
-                )}
-                <h3 className="font-semibold truncate">{product.name}</h3>
-                <p className="text-green-600 font-bold">${product.price}</p>
-                <div className="flex justify-between items-center mt-2">
-                  <span className={`text-xs px-2 py-1 rounded ${
-                    product.status === 'available' ? 'bg-green-100 text-green-800' :
-                    product.status === 'sold' ? 'bg-red-100 text-red-800' :
-                    'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {product.status}
-                  </span>
-                  {product.isDeleted && (
-                    <span className="text-xs text-red-600">🗑️ Deleted</span>
-                  )}
-                </div>
+              <div key={product._id}>
+                <ProductCard product={product} href={`/admin/products/${product._id}`} />
               </div>
             ))}
           </div>

@@ -10,7 +10,6 @@ interface RateLimitStore {
 
 const store: RateLimitStore = {}
 
-// Clean up old entries every 5 minutes
 setInterval(() => {
   const now = Date.now()
   Object.keys(store).forEach(key => {
@@ -21,8 +20,8 @@ setInterval(() => {
 }, 5 * 60 * 1000)
 
 export const createRateLimiter = (options: {
-  windowMs: number // Time window in milliseconds
-  maxRequests: number // Max requests per window
+  windowMs: number
+  maxRequests: number
   message?: string
   keyGenerator?: (req: Request) => string
 }) => {
@@ -35,7 +34,6 @@ export const createRateLimiter = (options: {
     const record = store[key]
 
     if (!record || record.resetTime < now) {
-      // Create new record
       store[key] = {
         count: 1,
         resetTime: now + options.windowMs
@@ -57,32 +55,30 @@ export const createRateLimiter = (options: {
   }
 }
 
-// Specific rate limiters for different endpoints
 export const authRateLimiter = createRateLimiter({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  maxRequests: 5, // 5 attempts per 15 minutes
+  windowMs: 15 * 60 * 1000,
+  maxRequests: 5,
   message: 'Too many authentication attempts. Please try again in 15 minutes.'
 })
 
 export const passwordResetRateLimiter = createRateLimiter({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  maxRequests: 3, // 3 attempts per hour
+  windowMs: 60 * 60 * 1000,
+  maxRequests: 3,
   message: 'Too many password reset attempts. Please try again in 1 hour.',
   keyGenerator: (req) => {
-    // Rate limit by email to prevent enumeration
     const email = req.body.email
     return email ? `reset:${email.toLowerCase()}` : req.ip || 'unknown'
   }
 })
 
 export const orderCreationRateLimiter = createRateLimiter({
-  windowMs: 60 * 1000, // 1 minute
-  maxRequests: 3, // 3 orders per minute
+  windowMs: 60 * 1000,
+  maxRequests: 3,
   message: 'Too many order attempts. Please wait before creating another order.'
 })
 
 export const reviewRateLimiter = createRateLimiter({
-  windowMs: 60 * 1000, // 1 minute
-  maxRequests: 5, // 5 reviews per minute
+  windowMs: 60 * 1000,
+  maxRequests: 5,
   message: 'Too many review submissions. Please wait before submitting another review.'
 })

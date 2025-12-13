@@ -45,7 +45,6 @@ export default function Signup() {
       console.error('Error response:', err.response)
       console.error('Error data:', err.response?.data)
       
-      // Get the detailed error message from backend
       const errorMessage = err.response?.data?.message || err.message || 'Failed to create account'
       setError(errorMessage)
     } finally {

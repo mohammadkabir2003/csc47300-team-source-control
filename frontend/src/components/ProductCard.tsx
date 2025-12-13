@@ -3,9 +3,10 @@ import { Product } from '../types'
 
 interface ProductCardProps {
   product: Product
+  href?: string // optional override for link target
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+export default function ProductCard({ product, href }: ProductCardProps) {
   const price = product.price || '0.00'
   const imageUrl = product.images && product.images.length > 0 
     ? `/api/uploads/image/${product.images[0]}`
@@ -14,12 +15,12 @@ export default function ProductCard({ product }: ProductCardProps) {
   const productName = product.name || product.title || 'Untitled'
   const productLocation = product.campus || product.location || 'Location not specified'
   const productId = product._id || product.id
+  const to = href ?? `/product/${productId}`
 
-  // Use availableQuantity if present (from API), fallback to quantity
   const stockQuantity = product.availableQuantity ?? product.quantity ?? 0
 
   return (
-    <Link to={`/product/${productId}`} className="card product-card" style={{ position: 'relative' }}>
+    <Link to={to} className="card product-card" style={{ position: 'relative' }}>
       {stockQuantity === 0 && (
         <div style={{
           position: 'absolute',
@@ -52,7 +53,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           ONLY {stockQuantity} LEFT
         </div>
       )}
-      <img src={imageUrl} alt={productName} />
+      <img src={imageUrl} alt={productName} className="w-full h-40 object-cover rounded" />
       <h3>{productName}</h3>
       <p className="price">${price}</p>
       <p className="location">{productLocation}</p>

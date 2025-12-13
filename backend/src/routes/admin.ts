@@ -13,13 +13,8 @@ import { authMiddleware, requireAdmin, requireAdmin2 } from '../middleware/auth.
 import { generateToken } from '../utils/jwt.js'
 
 export const adminRouter = express.Router()
-
-// All admin routes require at least admin1 authentication
 adminRouter.use(authMiddleware, requireAdmin)
 
-// ========== ADMIN USER MANAGEMENT (Admin2 Only) ==========
-
-// Create new admin user (Admin2 only)
 adminRouter.post('/create-admin', requireAdmin2, async (req, res, next) => {
   try {
     const { email, password, firstName, lastName, role } = req.body
@@ -32,7 +27,6 @@ adminRouter.post('/create-admin', requireAdmin2, async (req, res, next) => {
       throw new AppError('Role must be admin1 or admin2', 400)
     }
 
-    // Check if ANY user exists with this email (active or deleted)
     const existingUser = await User.findOne({ email: email.toLowerCase() })
     
     if (existingUser) {
@@ -75,14 +69,12 @@ adminRouter.post('/create-admin', requireAdmin2, async (req, res, next) => {
   }
 })
 
-// Get all admin users (Admin2 only)
 adminRouter.get('/admins', requireAdmin2, async (req, res, next) => {
   try {
     const { includeDeleted } = req.query
 
     const query: any = { role: { $in: ['admin1', 'admin2'] } }
     
-    // Admin2 can see deleted records
     if (includeDeleted !== 'true') {
       query.isDeleted = false
     }
@@ -95,18 +87,13 @@ adminRouter.get('/admins', requireAdmin2, async (req, res, next) => {
   }
 })
 
-// ========== USERS MANAGEMENT ==========
-
-// Get all users
 adminRouter.get('/users', async (req, res, next) => {
   try {
     const { page = 1, limit = 20, search, role, includeDeleted } = req.query
 
     const query: any = {}
     
-    // Only Admin2 can see deleted records
     if (req.user!.role === 'admin2' && includeDeleted === 'true') {
-      // Include deleted
     } else {
       query.isDeleted = false
     }
@@ -142,12 +129,10 @@ adminRouter.get('/users', async (req, res, next) => {
   }
 })
 
-// Get user by ID with history
 adminRouter.get('/users/:id', async (req, res, next) => {
   try {
     const query: any = { _id: req.params.id }
     
-    // Only Admin2 can see deleted records
     if (req.user!.role !== 'admin2') {
       query.isDeleted = false
     }
@@ -158,7 +143,6 @@ adminRouter.get('/users/:id', async (req, res, next) => {
       throw new AppError('User not found', 404)
     }
 
-    // Get user's history
     const [products, orders, reviews] = await Promise.all([
       Product.find({ sellerId: req.params.id, ...(req.user!.role !== 'admin2' ? { isDeleted: false } : {}) }).sort('-createdAt'),
       Order.find({ userId: req.params.id, ...(req.user!.role !== 'admin2' ? { isDeleted: false } : {}) }).sort('-createdAt'),
@@ -185,8 +169,6 @@ adminRouter.get('/users/:id', async (req, res, next) => {
   }
 })
 
-// Update user (Admin1: CRU, Admin2: CRUD)
-// Admin2 can promote users to any role including admin2
 adminRouter.put('/users/:id', async (req, res, next) => {
   try {
     const { firstName, lastName, email, phone, role, isEmailVerified } = req.body
