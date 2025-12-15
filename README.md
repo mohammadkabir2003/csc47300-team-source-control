@@ -2,23 +2,51 @@
 
 A campus marketplace application for CCNY students.
 
-## Getting Started
+IMPORTANT: Place the required `.env` file inside the `backend/` folder before following the setup steps below. The servers will not run correctly without it.
 
-### Prerequisites
+## Quick Setup
 
-1. Place the `.env` file in the `/backend` folder (environment variables provided privately). The app will not work without this file.
+**Prerequisite:** Node.js (includes `npm`) must be installed.
 
-### Running the Application
-
-From the root of the repo, run:
+- Check your install:
 
 ```bash
-./start.sh
+node -v
+npm -v
 ```
 
-This script will:
-- Install all dependencies
-- Start the backend server on port 3001
-- Start the frontend server on port 3000
+If not installed, install Node.js (recommended: use `nvm` or download from https://nodejs.org).
 
-Access the app at http://localhost:3000
+> Keep a copy of the required `.env` file inside the `backend/` folder before starting the servers.
+
+## Run backend
+
+Open a terminal and run:
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+This starts the backend server (development mode).
+
+## Run frontend (in a separate terminal)
+
+Open a new terminal window/tab and run:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+This starts the frontend dev server.
+
+## About `start.sh`
+
+There is a convenience script `./start.sh` in the repo root. Use it only if you are on a macOS machine and you want a single command to install and start both backend and frontend. Otherwise prefer the manual steps above.
+
+## Access
+
+Open your browser at `http://localhost:3000` once both servers are running.
