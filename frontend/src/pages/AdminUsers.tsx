@@ -412,7 +412,9 @@ export default function AdminUsers() {
                   opacity: u.isDeleted ? 0.7 : 1
                 }}>
                   <td style={{ padding: '0.75rem 1rem', fontWeight: '600' }}>
-                    {u.firstName} {u.lastName}
+                    <Link to={`/user/${u._id}`} style={{ color: 'var(--color-primary)', fontWeight: 700, textDecoration: 'none' }}>
+                      {u.firstName} {u.lastName}
+                    </Link>
                     {u.isDeleted && <span style={{ color: '#dc2626', marginLeft: '0.5rem', fontSize: '0.75rem' }}>(DELETED)</span>}
                   </td>
                   <td style={{ padding: '0.75rem 1rem' }}>{u.email}</td>
@@ -470,6 +472,10 @@ export default function AdminUsers() {
                       <button onClick={() => setEditingUser(u)} className="btn btn-sm btn-ghost">
                         Edit
                       </button>
+
+                      <Link to={`/admin/users/${u._id}`} className="btn btn-sm btn-ghost" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>
+                        View
+                      </Link>
                       
                       {/* Ban/Unban buttons - admins can ban anyone except themselves */}
                       {!u.isDeleted && u._id !== user?.id && (
@@ -674,7 +680,7 @@ export default function AdminUsers() {
 
       <Modal
         isOpen={modal.isOpen}
-        onClose={() => setModal({ ...modal, isOpen: false, onConfirm: undefined })}
+        onClose={() => setModal(m => ({ ...m, isOpen: false, onConfirm: undefined }))}
         title={modal.title}
         message={modal.message}
         type={modal.type}

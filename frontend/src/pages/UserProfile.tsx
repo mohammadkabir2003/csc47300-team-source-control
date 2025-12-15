@@ -86,17 +86,19 @@ export default function UserProfile() {
             {history.reviews && history.reviews.length > 0 && (
               <div className="card" style={{ padding: '1rem' }}>
                 <h2>Reviews ({history.totalReviews})</h2>
-                <div className="space-y-3">
-                  {history.reviews.map((r: any) => (
-                    <div key={r._id} className="border-l-4 border-blue-500 pl-4 py-2">
-                      <div className="flex items-center mb-1">
-                        <span className="text-yellow-500">{'★'.repeat(r.rating)}</span>
-                        <span className="ml-2 text-sm text-gray-500">{new Date(r.createdAt).toLocaleDateString()}</span>
-                      </div>
-                      <p className="text-sm text-gray-700">{r.comment}</p>
+                    <div className="space-y-3">
+                      {history.reviews.map((r: any) => (
+                        <div key={r._id} style={{ padding: '0.75rem', background: 'var(--color-surface)', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <div style={{ color: '#f59e0b', fontSize: '1rem', lineHeight: 1 }}>{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</div>
+                            </div>
+                            <div className="muted" style={{ fontSize: '0.875rem' }}>{new Date(r.createdAt).toLocaleDateString()}</div>
+                          </div>
+                          <div style={{ color: 'var(--color-text)', fontSize: '0.95rem' }}>{r.comment}</div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
               </div>
             )}
           </div>

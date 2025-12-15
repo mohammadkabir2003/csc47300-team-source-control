@@ -42,6 +42,7 @@ export default function MyListings() {
   const [loading, setLoading] = useState(true)
   const [selectedListing, setSelectedListing] = useState<Product | null>(null)
   const [reviews, setReviews] = useState<Review[]>([])
+  const [myReviews, setMyReviews] = useState<any[]>([])
   const [orders, setOrders] = useState<Order[]>([])
   const [activeTab, setActiveTab] = useState<'details' | 'reviews' | 'orders'>('details')
   const [editMode, setEditMode] = useState(false)
@@ -81,6 +82,13 @@ export default function MyListings() {
       setReviews(reviewRes.data.data || [])
     } catch (error) {
       setReviews([])
+    }
+    // load reviews authored by current user (seller)
+    try {
+      const myRes = await axios.get('/api/reviews/user/me')
+      setMyReviews(myRes.data.data || [])
+    } catch (err) {
+      setMyReviews([])
     }
     
     try {
@@ -161,7 +169,7 @@ export default function MyListings() {
       <Header />
       <Modal
         isOpen={modal.isOpen}
-        onClose={() => setModal({ ...modal, isOpen: false })}
+        onClose={() => setModal(m => ({ ...m, isOpen: false }))}
         title={modal.title}
         message={modal.message}
         type={modal.type}
@@ -390,38 +398,60 @@ export default function MyListings() {
                     <p className="muted">No reviews yet for this product.</p>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                      {reviews.map(review => (
-                        <div key={review._id} style={{ 
-                          padding: '1rem', 
-                          background: review.userBanned ? '#fef2f2' : 'var(--color-surface)', 
-                          borderRadius: '8px',
-                          border: review.userBanned ? '1px solid #fecaca' : 'none'
-                        }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                              <strong>{review.userId?.firstName} {review.userId?.lastName}</strong>
-                              {review.userBanned && (
-                                <span style={{
-                                  background: '#dc2626',
-                                  color: 'white',
-                                  fontSize: '0.65rem',
-                                  fontWeight: 'bold',
-                                  padding: '0.125rem 0.375rem',
-                                  borderRadius: '4px',
-                                  textTransform: 'uppercase'
-                                }}>
-                                  Banned User
-                                </span>
-                              )}
-                              <span style={{ marginLeft: review.userBanned ? '0' : '0.75rem', color: '#f59e0b' }}>
-                                {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
-                              </span>
+                          {/* Show reviews for this product */}
+                          {reviews.map(review => (
+                            <div key={review._id} style={{ 
+                              padding: '1rem', 
+                              background: review.userBanned ? '#fef2f2' : 'var(--color-surface)', 
+                              borderRadius: '8px',
+                              border: review.userBanned ? '1px solid #fecaca' : 'none'
+                            }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                  <strong>{review.userId?.firstName} {review.userId?.lastName}</strong>
+                                  {review.userBanned && (
+                                    <span style={{
+                                      background: '#dc2626',
+                                      color: 'white',
+                                      fontSize: '0.65rem',
+                                      fontWeight: 'bold',
+                                      padding: '0.125rem 0.375rem',
+                                      borderRadius: '4px',
+                                      textTransform: 'uppercase'
+                                    }}>
+                                      Banned User
+                                    </span>
+                                  )}
+                                  <span style={{ marginLeft: review.userBanned ? '0' : '0.75rem', color: '#f59e0b' }}>
+                                    {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
+                                  </span>
+                                </div>
+                                <span className="muted" style={{ fontSize: '0.875rem' }}>{formatDate(review.createdAt)}</span>
+                              </div>
+                              <p style={{ margin: 0 }}>{review.comment}</p>
                             </div>
-                            <span className="muted" style={{ fontSize: '0.875rem' }}>{formatDate(review.createdAt)}</span>
-                          </div>
-                          <p style={{ margin: 0 }}>{review.comment}</p>
-                        </div>
-                      ))}
+                          ))}
+
+                          {/* Reviews authored by the current seller */}
+                          {myReviews.length > 0 && (
+                            <div style={{ marginTop: '1.25rem' }}>
+                              <h4>Your Reviews ({myReviews.length})</h4>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
+                                {myReviews.map((r: any) => (
+                                  <div key={r._id} style={{ padding: '0.75rem', background: 'var(--color-surface)', borderRadius: '8px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <strong>on {r.productId?.name || 'Unknown product'}</strong>
+                                        <span style={{ color: '#f59e0b' }}>{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</span>
+                                      </div>
+                                      <span className="muted" style={{ fontSize: '0.875rem' }}>{formatDate(r.createdAt)}</span>
+                                    </div>
+                                    <p style={{ margin: 0 }}>{r.comment}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                     </div>
                   )}
                 </div>
@@ -440,7 +470,24 @@ export default function MyListings() {
                             <div>
                               <strong>Order #{order.orderNumber}</strong>
                               <p style={{ margin: '0.25rem 0' }} className="muted">
-                                Buyer: {order.userId?.firstName} {order.userId?.lastName}
+                                Buyer:{' '}
+                                {(() => {
+                                  const uid = (order.userId && ((order.userId as any)._id || (order.userId as any))) || undefined
+                                  const first = (order.userId as any)?.firstName || ''
+                                  const last = (order.userId as any)?.lastName || ''
+                                  const displayName = first || last ? `${first} ${last}`.trim() : ((order.userId as any)?.email || 'Unknown')
+                                  if (uid) {
+                                    return (
+                                      <Link
+                                        to={`/user/${uid}`}
+                                        style={{ color: 'var(--color-primary)', fontWeight: 600, textDecoration: 'none' }}
+                                      >
+                                        {displayName}
+                                      </Link>
+                                    )
+                                  }
+                                  return <span style={{ fontWeight: 600 }}>{displayName}</span>
+                                })()}
                               </p>
                             </div>
                             <span style={Object.fromEntries(getStatusBadge(order.status).split(';').filter(s => s.trim()).map(s => s.split(':').map(p => p.trim())))}>{order.status.replace(/_/g, ' ')}</span>

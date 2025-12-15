@@ -75,12 +75,16 @@ ordersRouter.get('/', async (req, res, next) => {
         const itemsWithSellerStatus = await Promise.all(
           orderData.items.map(async (item: any) => {
             if (item.productId) {
-              const product = await Product.findById(item.productId._id).populate('sellerId', 'isBanned isDeleted')
+              const product = await Product.findById(item.productId._id).populate('sellerId', 'isBanned isDeleted firstName lastName email')
               const seller = product?.sellerId as any
+              const sid = seller?._id || undefined
               return {
                 ...item,
                 sellerBanned: seller?.isBanned || false,
-                sellerDeleted: seller?.isDeleted || false
+                sellerDeleted: seller?.isDeleted || false,
+                sellerId: sid,
+                sellerName: seller ? `${seller.firstName} ${seller.lastName}`.trim() : undefined,
+                sellerEmail: seller?.email
               }
             }
             return item

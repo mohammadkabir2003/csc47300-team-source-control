@@ -42,6 +42,24 @@ reviewsRouter.get('/product/:productId', async (req, res, next) => {
   }
 })
 
+// Get reviews written by a user (authenticated). Use 'me' to refer to current user.
+reviewsRouter.get('/user/:userId', authMiddleware, async (req, res, next) => {
+  try {
+    const { userId } = req.params
+    const viewer = req.user!
+    const targetId = userId === 'me' ? viewer._id : userId
+
+    const reviews = await Review.find({ userId: targetId, isDeleted: { $ne: true } })
+      .populate('productId', 'name images price')
+      .sort('-createdAt')
+      .lean()
+
+    res.json({ success: true, data: reviews })
+  } catch (error) {
+    next(error)
+  }
+})
+
 reviewsRouter.get('/can-review/:productId', authMiddleware, async (req, res, next) => {
   try {
     const { productId } = req.params

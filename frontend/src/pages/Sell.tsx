@@ -75,6 +75,13 @@ export default function Sell() {
       return
     }
 
+    // Client-side validation: description must be present
+    if (!formData.description || formData.description.trim().length === 0) {
+      setError('Description is required')
+      setLoading(false)
+      return
+    }
+
     try {
       
       let imageIds: string[] = []
@@ -133,14 +140,18 @@ export default function Sell() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="description">Description</label>
+            <label htmlFor="description">Description *</label>
             <textarea
               id="description"
               className="textarea"
               rows={4}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              required
             />
+            <small style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
+              Please provide a clear description of the item. This field is required.
+            </small>
           </div>
 
           <div className="form-group">

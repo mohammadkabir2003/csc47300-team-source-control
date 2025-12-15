@@ -132,8 +132,11 @@ export default function Modal({
               </button>
               <button
                 onClick={() => {
-                  onConfirm()
-                  onClose()
+                  try {
+                    onClose()
+                  } finally {
+                    onConfirm()
+                  }
                 }}
                 className="btn btn-primary"
                 style={{ minWidth: '100px' }}

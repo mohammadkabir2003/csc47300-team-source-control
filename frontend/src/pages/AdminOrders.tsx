@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { adminService } from '../services/adminService'
 import { useAuth } from '../context/AuthContext'
 import Header from '../components/Header'
@@ -8,6 +8,7 @@ import Modal from '../components/Modal'
 export default function AdminOrders() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const location = useLocation()
   const [orders, setOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('')
@@ -47,6 +48,50 @@ export default function AdminOrders() {
     }
     loadOrders()
   }, [user, navigate, statusFilter, showDeleted])
+
+  // If a `highlight` query param is present (e.g. from disputes), open that order
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const highlightId = params.get('highlight')
+    if (!highlightId) return
+
+    // Wait until orders have been loaded
+    if (loading) return
+
+    const match = orders.find(o => o._id === highlightId)
+    if (match) {
+      // open the edit modal for the highlighted order
+      handleEditOrder(match)
+    } else {
+      // Order not found in current list (likely archived/deleted)
+      if (user?.role === 'admin2') {
+        // Admin2 will be redirected to view deleted orders — show a redirecting message first
+        setModal({
+          isOpen: true,
+          title: 'Redirecting',
+          message: 'The requested order appears archived. Click OK to view deleted orders.',
+          type: 'info',
+          onConfirm: () => {
+            // Enable showing deleted orders and ensure we stay on the highlighted URL
+            setShowDeleted(true)
+            if (highlightId) {
+              navigate(`/admin/orders?highlight=${highlightId}`)
+            } else {
+              navigate('/admin/orders')
+            }
+          }
+        })
+      } else {
+        // Non-admin2 users see a simple error and instruction to contact admin2
+        setModal({
+          isOpen: true,
+          title: 'Order Not Found',
+          message: 'This order does not exist. If you believe this is an error, please contact an Admin2.',
+          type: 'error'
+        })
+      }
+    }
+  }, [location.search, orders, loading])
 
   const loadOrders = async () => {
     try {
@@ -820,7 +865,7 @@ export default function AdminOrders() {
 
       <Modal
         isOpen={modal.isOpen}
-        onClose={() => setModal({ ...modal, isOpen: false })}
+        onClose={() => setModal(m => ({ ...m, isOpen: false }))}
         title={modal.title}
         message={modal.message}
         type={modal.type}

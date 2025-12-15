@@ -358,7 +358,7 @@ export default function DisputeChat() {
 
         <Modal
           isOpen={modal.isOpen}
-          onClose={() => setModal({ ...modal, isOpen: false })}
+          onClose={() => setModal(m => ({ ...m, isOpen: false }))}
           title={modal.title}
           message={modal.message}
           type={modal.type}

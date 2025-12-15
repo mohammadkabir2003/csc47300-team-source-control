@@ -420,7 +420,7 @@ export default function AdminProducts() {
 
       <Modal
         isOpen={modal.isOpen}
-        onClose={() => setModal({ ...modal, isOpen: false, onConfirm: undefined })}
+        onClose={() => setModal(m => ({ ...m, isOpen: false, onConfirm: undefined }))}
         title={modal.title}
         message={modal.message}
         type={modal.type}

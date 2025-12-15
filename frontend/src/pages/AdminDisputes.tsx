@@ -460,14 +460,14 @@ export default function AdminDisputes() {
                   <p style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <strong>Order:</strong> {selectedDispute.orderId?.orderNumber || 'N/A'}
                     {selectedDispute.orderId?._id && (
-                      <a 
-                        href={`/admin/orders?highlight=${selectedDispute.orderId._id}`}
+                      <Link
+                        to={`/admin/orders?highlight=${selectedDispute.orderId._id}`}
                         className="btn"
                         style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
                         onClick={(e) => e.stopPropagation()}
                       >
                         View Order
-                      </a>
+                      </Link>
                     )}
                     {selectedDispute.orderId?.status && (
                       <span style={{
@@ -816,7 +816,7 @@ export default function AdminDisputes() {
 
       <Modal
         isOpen={modal.isOpen}
-        onClose={() => setModal({ ...modal, isOpen: false, onConfirm: undefined })}
+        onClose={() => setModal(m => ({ ...m, isOpen: false, onConfirm: undefined }))}
         title={modal.title}
         message={modal.message}
         type={modal.type}

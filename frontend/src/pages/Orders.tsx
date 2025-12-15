@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Header from '../components/Header'
+import { Link } from 'react-router-dom'
 import Modal from '../components/Modal'
 import { DBOrder } from '../types'
 import { orderService } from '../services/orderService'
@@ -287,7 +288,7 @@ export default function Orders() {
                                 <div style={{ flex: 1 }}>
                                   <p><strong>{item.name || item.productId?.name || 'Product'}</strong></p>
                                   <p className="muted">Quantity: {item.quantity} × ${item.price || item.productId?.price || '0.00'}</p>
-                                  {sellerInactive && (
+                                    {sellerInactive && (
                                     <p style={{ 
                                       fontSize: '0.75rem', 
                                       color: '#dc2626', 
@@ -297,6 +298,18 @@ export default function Orders() {
                                       ⚠️ Seller account {item.sellerBanned ? 'banned' : 'deleted'}
                                     </p>
                                   )}
+                                    {/* Seller link (purchases): */}
+                                    {!sellerInactive && (item.sellerId || item.productId?.sellerId) && (
+                                      <p style={{ margin: '0.25rem 0 0 0' }}>
+                                        <span className="muted">Seller: </span>
+                                        {(() => {
+                                          const sid = item.sellerId || (item.productId && ((item.productId as any).sellerId?._id || (item.productId as any).sellerId))
+                                          const name = item.sellerName || (item.productId && (item.productId as any).sellerName) || (item.sellerEmail || (item.productId && (item.productId as any).sellerEmail)) || 'Seller'
+                                          if (sid) return (<a href={`/user/${sid}`} style={{ color: 'var(--color-primary)', fontWeight: 600, textDecoration: 'none' }}>{name}</a>)
+                                          return <span style={{ fontWeight: 600 }}>{name}</span>
+                                        })()}
+                                      </p>
+                                    )}
                                 </div>
                               </div>
                             )
@@ -488,7 +501,33 @@ export default function Orders() {
                           </div>
                         </div>
                         
-                        <div style={{ marginBottom: '1rem' }}>
+                          {/* Buyer info (link to public profile) */}
+                          <div style={{ marginBottom: '0.5rem' }}>
+                            {(() => {
+                              const buyerInactive = (order as any).buyerBanned || (order as any).buyerDeleted
+                              const buyerObj = (order as any).userId
+                              const bid = buyerObj && (buyerObj._id || buyerObj) ? (buyerObj._id || buyerObj) : undefined
+                              const bFirst = buyerObj?.firstName || buyerObj?.first_name || ''
+                              const bLast = buyerObj?.lastName || buyerObj?.last_name || ''
+                              const bEmail = buyerObj?.email || buyerObj?._lcEmail
+                              const display = (bFirst || bLast) ? `${bFirst} ${bLast}`.trim() : (bEmail || 'Buyer')
+
+                              return (
+                                <p className="muted" style={{ margin: 0 }}>
+                                  Buyer: {' '}
+                                  {buyerInactive ? (
+                                    <span style={{ fontWeight: 600 }}>{display}</span>
+                                  ) : bid ? (
+                                    <Link to={`/user/${bid}`} style={{ color: 'var(--color-primary)', fontWeight: 600, textDecoration: 'none' }}>{display}</Link>
+                                  ) : (
+                                    <span style={{ fontWeight: 600 }}>{display}</span>
+                                  )}
+                                </p>
+                              )
+                            })()}
+                          </div>
+
+                          <div style={{ marginBottom: '1rem' }}>
                           {order.items?.map((item: any, index: number) => {
                             const imageUrl = item.image 
                               ? `/api/uploads/image/${item.image}`
@@ -686,7 +725,7 @@ export default function Orders() {
 
         <Modal
           isOpen={modal.isOpen}
-          onClose={() => setModal({ ...modal, isOpen: false, onConfirm: undefined })}
+          onClose={() => setModal(m => ({ ...m, isOpen: false, onConfirm: undefined }))}
           title={modal.title}
           message={modal.message}
           type={modal.type}
